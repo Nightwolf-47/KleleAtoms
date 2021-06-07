@@ -1,5 +1,7 @@
 # KłełeAtoms
 A game where you have to take atoms from other players by blowing up yours.
+  
+![katoms4](https://user-images.githubusercontent.com/72660447/121074985-e68e1f00-c7d4-11eb-83bc-7d3b8512b8ef.png)
 
 ## Install instructions
 - Download LOVE for your platform from https://love2d.org/.
