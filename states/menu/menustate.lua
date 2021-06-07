@@ -192,7 +192,7 @@ function menustate.draw()
     end
     love.graphics.setColor(1,1,1,1)
     local klwidth, klheight = kalogo:getDimensions()
-    love.graphics.draw(kalogo,(640-klwidth)/2,150-klheight)
+    love.graphics.draw(kalogo,(640-klwidth)/2,0)
     love.graphics.printf(madebystr,_CAFont16,5,460,630,"right")
     love.graphics.setColor(0,0,0,1)
     love.graphics.rectangle("fill",-50,0,50,480)
