@@ -47,10 +47,27 @@ function mobile.setresolution(winx,winy) --Set ingame resolution
     res = {winx,winy}
 end
 
+function mobile.getresolution() --Get ingame resolution
+    return res[1],res[2]
+end
+
 function mobile.convertcoords(x,y) --Convert screen coordinates to ingame coordinates
     x = (x-movex)/scale
     y = y/scale
     return x,y
+end
+
+function mobile.absolutedrawmode(enable) --Draw without scaling and x coordinate offset
+    if enable and isGfxPushed then
+        love.graphics.pop()
+        isGfxPushed = false
+    end
+    if not enable and not isGfxPushed then
+        love.graphics.push()
+        love.graphics.translate(movex,0)
+        love.graphics.scale(scale,scale)
+        isGfxPushed = true
+    end
 end
 
 return mobile

@@ -57,46 +57,42 @@ local function aiGetSpecialTiles(difficulty) --Make a list of available tiles, a
     local sptiles = {} --Special tiles
     local advtiles = {} --Advantage tiles
     local tiles = {} --All available tiles
-    local avoid = {} --Tiles to avoid
+    local natiles = {} --Tiles without avoided ones
     local gridx = #logic.grid --Grid width
     local gridy = #logic.grid[1] --Grid height
     local wasSpCorner = false --Was any tile a special corner
     local wasAdvCorner = false --Was any tile an advantage corner
     local corners = {} --Corner tiles
-    local availabletiles = 0 --Number of not avoided tiles
     local cornercount = aiGetCorners(gridx,gridy)
     for x = 1,gridx do
         for y = 1,gridy do
             if logic.grid[x][y].player == logic.curplayer or logic.grid[x][y].player == 0 then --If tile is clickable by the player
                 local isSpTile = false
                 local tileAvoided = false
-                availabletiles = availabletiles + 1
                 table.insert(tiles,{x,y}) --Tile is valid
+                table.insert(natiles,{x,y})
                 if difficulty == 2 then --Medium difficulty
                     if aiCheckPreCrit(x,y) then --Check if any nearby tiles will explode after 1 atom is added
                         if #logic.grid[x][y].atoms == (logic.critgrid[x][y] - 1) then --If your tile will do it as well, focus on it
                             table.insert(sptiles,{x,y})
                             isSpTile = true
                         else --Otherwise, avoid it
-                            avoid[(x-1)+(y-1)*gridx] = true
+                            table.remove(natiles)
                             tileAvoided = true
-                            availabletiles = availabletiles - 1
                         end
                     end
                 elseif difficulty == 3 then --Hard (at least it's supposed to be)
                     local isCorner = (x == 1 or x == gridx) and (y == 1 or y == gridy)
                     if isCorner and atomcount == 1 and not aiAtomsNearby(x,y) then --Avoid exploding corners when no atoms are nearby
-                        avoid[(x-1)+(y-1)*gridx] = true
+                        table.remove(natiles)
                         tileAvoided = true
-                        availabletiles = availabletiles - 1
                     elseif aiCheckPreCrit(x,y) then --Otherwise the same as in difficulty 2
                         if #logic.grid[x][y].atoms == (logic.critgrid[x][y] - 1) then
                             table.insert(sptiles,{x,y})
                             isSpTile = true
                         else
-                            avoid[(x-1)+(y-1)*gridx] = true
+                            table.remove(natiles)
                             tileAvoided = true
-                            availabletiles = availabletiles - 1
                         end
                     end
                     local atomcount = #logic.grid[x][y].atoms
@@ -135,39 +131,25 @@ local function aiGetSpecialTiles(difficulty) --Make a list of available tiles, a
     elseif #sptiles == 0 and #advtiles > 0 then --Second priority: special tiles, third priority: advantage tiles (difficulty 3 only)
         sptiles = advtiles
     end
-    if availabletiles <= 0 then --If no tiles are good, pick any possible one (otherwise the game would softlock in infinite loop)
-        avoid = {}
+    if #natiles > 0 then --If there are any tiles except avoided ones choose only them, otherwise choose any available tile
+        tiles = natiles
     end
-    return sptiles, tiles, avoid
+    return sptiles, tiles
 end
-
-local alltimes = {0,0,0,0}
-
-local specialtimes = {0,0,0,0}
 
 local function aiThinker() --Pick a tile and use the clickedTile() function
     local tx = 0
     local ty = 0
-    alltimes[logic.curplayer] = alltimes[logic.curplayer] + 1
-    if ai.difficulty == 1 then --Easy - just pick a random tile
-        repeat
-            tx = love.math.random(1,#logic.grid)
-            ty = love.math.random(1,#logic.grid[1])
-        until(logic.grid[tx][ty].player == logic.curplayer or logic.grid[tx][ty].player == 0)
-    elseif ai.difficulty <= 3 then --Normal and Hard - more advanced strategies, not too advanced for optimization reasons
-        local sptiles, tiles, avoidtg = aiGetSpecialTiles(ai.difficulty)
+    if ai.difficulty <= 3 then --Easy - just pick a random tile, Normal and Hard - more advanced strategies, not too advanced for optimization reasons
+        local sptiles, tiles = aiGetSpecialTiles(ai.difficulty)
         if #sptiles > 0 then
-            specialtimes[logic.curplayer] = specialtimes[logic.curplayer] + 1
             local rindex = love.math.random(1,#sptiles)
             tx = sptiles[rindex][1]
             ty = sptiles[rindex][2]
         else
-            local gridx = #logic.grid
-            repeat
-                local rindex = love.math.random(1,#tiles)
-                tx = tiles[rindex][1]
-                ty = tiles[rindex][2]
-            until(not avoidtg[(tx-1)+(ty-1)*gridx])
+            local rindex = love.math.random(1,#tiles)
+            tx = tiles[rindex][1]
+            ty = tiles[rindex][2]
         end
     else
         error("Incorrect AI difficulty - "..tostring(ai.difficulty))
@@ -180,8 +162,6 @@ ai.playertab = {false,false}
 ai.difficulty = 2
 
 function ai.init(logictab,pnum,aipnum,ailevel) --Initialize AI
-    alltimes = {0,0,0,0}
-    specialtimes = {0,0,0,0}
     logic = logictab
     ai.playertab = {}
     for i = pnum,1,-1 do
@@ -203,16 +183,6 @@ function ai.tryMove(dt) --Execute thinker if no more delay is required
     aitime = aitime + dt
     if aitime >= cAIDELAY then
         aiThinker()
-    end
-end
-
-function ai.printPerf() --Print percentage of "strategic" moves made by every AI player
-    print(string.format("Difficulty %d, map size: %dx%d",ai.difficulty,#logic.grid,#logic.grid[1]))
-    for i = 1,4 do
-        if alltimes[i] > 0 then
-            local pstr = string.format("Player %d: %0.2f %% STRATEGIC",i,(specialtimes[i]/alltimes[i])*100)
-            print(pstr)
-        end
     end
 end
 

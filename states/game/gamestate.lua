@@ -16,32 +16,50 @@ local restarttime = 0.0 --In-game timer
 
 local exiting = nil --If the exit button is clicked, it stores a mouse button
 
-local colornames = {"Red","Blue","Green","Yellow"}
+local pausing = false --Will the game pause next turn?
 
 local function getGameTime()
     return string.format("%0.2d:%0.2d",restarttime / 60,restarttime % 60)
 end
 
-function gamestate.init()
-    gamelogic.loadAll(_CAGridW,_CAGridH,_CAPlayers,_CAAI,_CAAILevel)
-    if _CARFill then gamelogic.randomFill(_CAGridW,math.ceil(_CAGridH/2)) end
-    restarttime = 0.0
-    exiting = nil
-    return gamelogic.winsize[1],gamelogic.winsize[2]
+local function pauseGame()
+    if #gamelogic.atomstack > 0 or gamelogic.animplaying then
+        pausing = true
+        _CAState.printmsg("Pausing...",0.1)
+        return
+    end
+    pausing = false
+    love.graphics.captureScreenshot(function(imgdata)
+        local screenshot = love.graphics.newImage(imgdata)
+        _CAState.change("pause",{screenshot,gamelogic,restarttime})
+    end)
 end
 
-function gamestate.update(dt)
-    if not gamelogic.bgimg then gamelogic.generateGrid(_CAGridW,_CAGridH) end
-    restarttime = restarttime + dt
-    if gamelogic.playerwon == 0 then
-        gamelogic.tick(dt)
+function gamestate.init(laststate,argtab)
+    exiting = nil
+    screenshot = nil
+    pausing = false
+    if laststate ~= "pause" or (argtab and argtab[1] == "restart") then
+        gamelogic.loadAll(_CAGridW,_CAGridH,_CAPlayers,_CAAI,_CAAILevel)
+        restarttime = 0.0
+        local ttime = gamelogic.loadGame()
+        if ttime then restarttime = ttime; _CAState.printmsg("Saved game loaded.",2) end
+        return gamelogic.winsize[1],gamelogic.winsize[2]
     else
-        love.window.showMessageBox("Victory!","Player "..tostring(gamelogic.playerwon).." ("..colornames[gamelogic.playerwon]..") has won!\nTime: "..getGameTime(),"info")
-        _CAState.change("menu")
+        gamelogic.generateGrid(#gamelogic.grid,#gamelogic.grid[1])
     end
 end
 
-function gamestate.draw() --Draw all stuff except victory window, move animated atoms and calculate atom count for each player
+function gamestate.update(dt)
+    if not gamelogic.bgimg then gamelogic.generateGrid(#gamelogic.grid,#gamelogic.grid[1]) end
+    if gamelogic.playerwon == 0 then
+        if pausing then pauseGame() end
+        restarttime = restarttime + dt
+        gamelogic.tick(dt)
+    end
+end
+
+function gamestate.draw() --Draw all stuff, move animated atoms and calculate atom count for each player
     local dt = love.timer.getDelta()
     local mspeed = gamelogic.cATOMSPEED*dt*math.max(math.min(gamelogic.expcount,2000)/10,1) --move speed (in pixels)
     gamelogic.animplaying = false
@@ -68,8 +86,8 @@ function gamestate.draw() --Draw all stuff except victory window, move animated 
             love.graphics.draw(cplayer,xpos,ypos)
         end
     end
-    for x = 1,_CAGridW do
-        for y = 1,_CAGridH do
+    for x = 1,#gamelogic.grid do
+        for y = 1,#gamelogic.grid[1] do
             local atomg = gamelogic.grid[x][y].atoms
             local plcolor = gamelogic.grid[x][y].player
             if gamelogic.grid[x][y].explode > 0 then --Atom is exploding
@@ -110,21 +128,31 @@ function gamestate.draw() --Draw all stuff except victory window, move animated 
             end
         end
     end
+    if gamelogic.playerwon ~= 0 then 
+        gamelogic.drawVictoryWin(getGameTime())
+        return
+    end
     love.graphics.setColor(1,1,1,1)
     love.graphics.printf(getGameTime(),_CAFont16,0,0,gamelogic.winsize[1]-2,"right")
     love.graphics.draw(cback,2,2)
 end
 
-function gamestate.keypressed(key,scancode,isrepeat)
-    if restarttime >= 0.3 and (key == "m" or key == "escape") then
-        _CAState.change("menu")
+function gamestate.keyreleased(key)
+    if restarttime >= 0.3 then
+        if key == "m" then
+            _CAState.change("menu")
+        elseif key == "escape" and gamestate.playerwon == 0 then
+            pauseGame()
+        end
     end
 end
 
 function gamestate.mousepressed(x, y, button)
-    if x >= 0 and x <= 44 and y <= 44 then
+    local gw = #gamelogic.grid
+    local gh = #gamelogic.grid[1]
+    if gamelogic.playerwon ~= 0 or (x >= 0 and x <= 44 and y <= 44) then
         exiting = button
-    elseif x >= 10 and x < 10+_CAGridW*gamelogic.cGRIDSIZE and y >= 90 and y < 90+_CAGridH*gamelogic.cGRIDSIZE then
+    elseif x >= 10 and x < 10+gw*gamelogic.cGRIDSIZE and y >= 90 and y < 90+gh*gamelogic.cGRIDSIZE then
         local pressx = math.floor((x-10)/gamelogic.cGRIDSIZE)+1
         local pressy = math.floor((y-90)/gamelogic.cGRIDSIZE)+1
         gamelogic.clickedTile(pressx,pressy)
@@ -133,7 +161,11 @@ end
 
 function gamestate.mousereleased(x,y,button)
     if exiting == button then
-        _CAState.change("menu")
+        if gamelogic.playerwon == 0 then
+            pauseGame()
+        else
+            _CAState.change("menu")
+        end
     end
 end
 

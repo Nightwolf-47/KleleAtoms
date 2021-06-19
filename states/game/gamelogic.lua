@@ -8,6 +8,8 @@ local sndput = love.audio.newSource("sounds/put.wav","static")
 
 local sndexplode = love.audio.newSource("sounds/explode.wav","static")
 
+local colornames = {"Red","Blue","Green","Yellow"}
+
 local checktab = { --Order of chain reaction checks
     {0,1},{0,-1},{1,0},{-1,0} --Down > Up > Right > Left
 }
@@ -252,16 +254,20 @@ function logic.tick(dt) --Game tick - disqualifies players, picks the winner, ex
             explodeAtoms(tx,ty)
             logic.willexplode = {1,1,false}
         elseif #logic.atomstack > 0 then
-            local ttpos = logic.atomstack[#logic.atomstack]
-            local pmovetab = checkSurrounding(ttpos[1],ttpos[2])
-            if pmovetab then
-                ttpos = {ttpos[1]+pmovetab[1],ttpos[2]+pmovetab[2]}
-                logic.willexplode = {ttpos[1],ttpos[2],true}
-                table.insert(logic.atomstack,ttpos)
-            else
-                table.remove(logic.atomstack)
-                if #logic.atomstack == 0 then
-                    nextplayer()
+            for i = 1,math.min(#logic.atomstack,50) do --Pop up to 50 positions from stack per frame if they don't cause chain reactions
+                local ttpos = logic.atomstack[#logic.atomstack]
+                local pmovetab = checkSurrounding(ttpos[1],ttpos[2])
+                if pmovetab then
+                    ttpos = {ttpos[1]+pmovetab[1],ttpos[2]+pmovetab[2]}
+                    logic.willexplode = {ttpos[1],ttpos[2],true}
+                    table.insert(logic.atomstack,ttpos)
+                    break
+                else
+                    table.remove(logic.atomstack)
+                    if #logic.atomstack == 0 then
+                        nextplayer()
+                        break
+                    end
                 end
             end
         elseif ai.playertab[logic.curplayer] then
@@ -283,6 +289,87 @@ function logic.generateGrid(gridWidth,gridHeight) --Generate the grid background
             love.graphics.rectangle("fill",10,90+(i*cGRIDSIZE),gridWidth*cGRIDSIZE,1)
         end
     end)
+end
+
+function logic.drawVictoryWin(timestr) --Draw victory window and make background darker
+    local wx, wy = logic.winsize[1], logic.winsize[2]
+    love.graphics.setColor(0,0,0,0.5)
+    love.graphics.rectangle("fill",0,0,wx,wy)
+    love.graphics.setColor(0.5,0.5,0.5,1)
+    local msgx, msgy = math.floor((wx-256)/2), math.floor((wy-128)/2)
+    love.graphics.rectangle("fill",msgx,msgy,256,128)
+    love.graphics.setColor(0,0,0,1)
+    love.graphics.rectangle("line",msgx,msgy,256,128)
+    local str = "Player "..tostring(logic.playerwon).." ("..colornames[logic.playerwon]..") has won!\nTime: "..timestr.."\nClick to continue..."
+    love.graphics.printf(str,_CAFont16,msgx+8,msgy+50,240,"center")
+    love.graphics.setColor(1,1,1,1)
+    love.graphics.printf("Victory!",_CAFont24,msgx+8,msgy+8,240,"center")
+end
+
+local function cai(num,val) --For loadGame: convert player AI value to boolean
+    if val == 0 then
+        ai.playertab[num] = false
+    else
+        ai.playertab[num] = true
+    end
+end
+
+local function cpst(num,val) --For loadGame: convert player status value to various player variables
+    if val == 0 then
+        logic.playertab[num] = false
+        logic.playermoved[num] = true
+        logic.playeratoms[num] = 0
+    elseif val == 1 then
+        logic.playertab[num] = true
+        logic.playermoved[num] = false
+        logic.playeratoms[num] = 0
+    elseif val == 2 then
+        logic.playertab[num] = true
+        logic.playermoved[num] = true
+        logic.playeratoms[num] = 1
+    end
+end
+
+function logic.loadGame() --Loads the game, returns nil (on failure) or the new game time (on success)
+    if not love.filesystem.getInfo("savegame.ksf") then return nil end
+    local str = love.filesystem.read("savegame.ksf")
+    love.filesystem.remove("savegame.ksf")
+    if not str or string.sub(str,1,3) ~= "KSF" then _CAState.printmsg("Previous save is corrupted!",2); return nil end
+    local gridWidth = math.max(math.min(string.byte(str,4), 30), 7)
+    local gridHeight = math.max(math.min(string.byte(str,5), 20), 4)
+    if string.len(str) ~= (2*gridWidth*gridHeight)+20 then _CAState.printmsg("Previous save is invalid!",2); return nil end
+    logic.winsize[1],logic.winsize[2] = getWinSize(gridWidth,gridHeight)
+    logic.playertab = {}
+    logic.playeratoms = {}
+    logic.playermoved = {}
+    ai.playertab = {}
+    local players = math.min(string.byte(str,6),4)
+    logic.players = math.min(string.byte(str,7),4)
+    ai.difficulty = math.min(string.byte(str,8),3)
+    logic.curplayer = string.byte(str,9)
+    for i = 1,players do
+        cpst(i,string.byte(str,9+i))
+        cai(i,string.byte(str,13+i))
+    end
+    if logic.curplayer == 0 or logic.curplayer > players then
+        nextplayer()
+    end
+    local ttime = (string.byte(str,20)*3600)+(string.byte(str,19)*60)+string.byte(str,18)
+    local pos = 0
+    logic.grid = {}
+    for x = 1,gridWidth do
+        logic.grid[x] = {}
+        logic.critgrid[x] = {}
+        for y = 1,gridHeight do
+            logic.grid[x][y] = {player = 0, atoms = {}, explode = 0}
+            setAtomsUnsafe(x,y,string.byte(str,pos+22),string.byte(str,pos+21))
+            logic.critgrid[x][y] = 4
+            if x == 1 or x == gridWidth then logic.critgrid[x][y] = logic.critgrid[x][y] - 1 end
+            if y == 1 or y == gridHeight then logic.critgrid[x][y] = logic.critgrid[x][y] - 1 end
+            pos = pos + 2
+        end
+    end
+    return ttime
 end
 
 return logic

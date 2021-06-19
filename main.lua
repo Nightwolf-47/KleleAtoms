@@ -73,6 +73,7 @@ function love.load(args)
     checkSetValues() --Make sure the settings are within the acceptable range
     _CAState.list["game"] = require("states.game.gamestate")
     _CAState.list["menu"] = require("states.menu.menustate")
+    _CAState.list["pause"] = require("states.pause.pausestate")
     _CAState.change("menu")
 end
 

@@ -35,8 +35,9 @@ function state.draw()
         curstatedata.draw()
     end
     if globalmsg[2] > 0 then
+        local wx, wy = state.getWindowSize()
         love.graphics.setColor(0,1,0,1)
-        love.graphics.printf(globalmsg[1],_CAFont16,0,0,640,"left")
+        love.graphics.printf(globalmsg[1],_CAFont16,0,0,wx,"center")
         love.graphics.setColor(1,1,1,1)
     end
     if _CAKBMode then
@@ -137,6 +138,20 @@ function state.getMousePos() --Get current mouse position (use this instead of l
         mx,my = mobile.convertcoords(mx,my)
     end
     return mx,my
+end
+
+function state.getWindowSize()
+    if _CAIsMobile then
+        return mobile.getresolution()
+    else
+        return love.graphics.getDimensions()
+    end
+end
+
+function state.mobileAbsMode(enable)
+    if _CAIsMobile then
+        mobile.absolutedrawmode(enable)
+    end
 end
 
 return state

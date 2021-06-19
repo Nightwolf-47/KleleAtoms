@@ -12,6 +12,8 @@ local mgw = love.graphics.newImage("graphics/m_gw.png")
 
 local mplay = love.graphics.newImage("graphics/m_play.png")
 
+local mplaysav = love.graphics.newImage("graphics/m_playsav.png")
+
 local mplayers = love.graphics.newImage("graphics/m_players.png")
 
 local maicount = love.graphics.newImage("graphics/m_aicount.png")
@@ -38,6 +40,8 @@ local buttonstepback = false --Should button value go backwards?
 
 local requestedfunc = nil --Requested function (for click type buttons)
 
+local issavefile = false --Was the game saved before? (shows a saved game play button variant if true)
+
 local sndclick = love.audio.newSource("sounds/click.wav","static")
 
 local madebystr = "Made by Nightwolf-47" --Attribution string (bottom-right corner)
@@ -50,6 +54,14 @@ local function mailevelicon() --Return correct AI level icon
     return mlevel[_CAAILevel]
 end
 
+local function mplayicon() --Return correct play button icon
+    if issavefile then
+        return mplaysav
+    else
+        return mplay
+    end
+end
+
 local menuatoms = {} --Table of background atoms
 
 --{icon,description,x,y,type,val1,val2,val3,val4,val5}
@@ -59,7 +71,7 @@ local menuatoms = {} --Table of background atoms
 --type == "switch" -> val1 - global_var_name
 --type == "nofunc" -> no values
 local buttons = {
-    {mplay,"Play the game.",245,205,"click",playfunc}, --Play button
+    {mplayicon,"Start the game.",245,205,"click",playfunc}, --Play button
     {mgw,"Set grid width. (7-30)",50,325,"slider","_CAGridW",7,30,0.3,0.1}, --Grid Width
     {mgh,"Set grid height. (4-20)",245,325,"slider","_CAGridH",4,20,0.3,0.1}, --Grid Height
     {mplayers,"Set the amount of players. (2-4)",440,325,"slider","_CAPlayers",2,4,0,0}, --Player count
@@ -118,6 +130,13 @@ function menustate.init() --Initialize/modify some values and set resolution
     buttontimer = 0.0
     buttonpressed = 0
     buttonstepback = false
+    if love.filesystem.getInfo("savegame.ksf") then
+        buttons[1][2] = "Resume a saved game."
+        issavefile = true 
+    else
+        buttons[1][2] = "Start the game."
+        issavefile = false 
+    end
     local winh = love.graphics.getHeight()
     local winw = love.graphics.getWidth()
     if _CAIsMobile then 
