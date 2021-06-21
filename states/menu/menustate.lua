@@ -74,9 +74,9 @@ local buttons = {
     {mplayicon,"Start the game.",245,205,"click",playfunc}, --Play button
     {mgw,"Set grid width. (7-30)",50,325,"slider","_CAGridW",7,30,0.3,0.1}, --Grid Width
     {mgh,"Set grid height. (4-20)",245,325,"slider","_CAGridH",4,20,0.3,0.1}, --Grid Height
-    {mplayers,"Set the amount of players. (2-4)",440,325,"slider","_CAPlayers",2,4,0,0}, --Player count
-    {maicount,"Set up to how many players are AI. (0-4)",440,205,"slider","_CAAI",0,4,0,0}, --Max AI player count
-    {mailevelicon,"Set the AI difficulty. (1-3)",50,205,"slider","_CAAILevel",1,3,0,0}, --AI difficulty level
+    {mplayers,"Set the amount of players. (2-4)",440,325,"slider","_CAPlayers",2,4,0.3,0.2}, --Player count
+    {maicount,"Set up to how many players are AI. (0-4)",440,205,"slider","_CAAI",0,4,0.3,0.2}, --Max AI player count
+    {mailevelicon,"Set the AI difficulty. (1-3)",50,205,"slider","_CAAILevel",1,3,0.3,0.2}, --AI difficulty level
 }
 
 local mcoltab = { --table of atom colors by player number
