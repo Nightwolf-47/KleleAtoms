@@ -16,13 +16,15 @@ local bfontsize = 16 --Button text font size
 
 local winpos = {0,0,0,0,0,0} --1-4th numbers - positions of top-left and bottom-right corners, 5-6th are pause text width and y position
 
-local butpos1 = {0,0,0,0} --1-4th numbers - the same as above
+local butpos = {} 
 
-local butpos2 = {0,0,0,0}
+butpos[1] = {0,0,0,0} --1-4th numbers - the same as above
 
-local butpos3 = {0,0,0,0}
+butpos[2] = {0,0,0,0}
 
-local butpos4 = {0,0,0,0}
+butpos[3] = {0,0,0,0}
+
+butpos[4] = {0,0,0,0}
 
 local cbut = nil --Button texture (rendered once)
 
@@ -97,34 +99,34 @@ local function setupPauseMenu() --Calculate window, text and button positions, r
         math.floor(28*winx/32),
         math.floor(3*winy/20+yoffs)
     }
-    butpos1 = {
+    butpos[1] = {
         math.floor(1*(winpos[3]-winpos[1])/25+winpos[1]),
         math.floor(8*(winpos[4]-winpos[2])/12+winpos[2]),
         math.floor(12*(winpos[3]-winpos[1])/25+winpos[1]),
         math.floor(11*(winpos[4]-winpos[2])/12+winpos[2]),
     }
-    butpos2 = {
+    butpos[2] = {
         math.floor(13*(winpos[3]-winpos[1])/25+winpos[1]),
-        butpos1[2],
+        butpos[1][2],
         math.floor(24*(winpos[3]-winpos[1])/25+winpos[1]),
-        butpos1[4],
+        butpos[1][4],
     }
-    butpos3 = {
+    butpos[3] = {
         math.floor(1*(winpos[3]-winpos[1])/25+winpos[1]),
         math.floor(4*(winpos[4]-winpos[2])/12+winpos[2]),
         math.floor(12*(winpos[3]-winpos[1])/25+winpos[1]),
         math.floor(7*(winpos[4]-winpos[2])/12+winpos[2]),
     }
-    butpos4 = {
+    butpos[4] = {
         math.floor(13*(winpos[3]-winpos[1])/25+winpos[1]),
-        butpos3[2],
+        butpos[3][2],
         math.floor(24*(winpos[3]-winpos[1])/25+winpos[1]),
-        butpos3[4],
+        butpos[3][4],
     }
     local minw = math.min(winpos[3]-winpos[1],winpos[4]-winpos[2])
     pfont = love.graphics.newFont(math.floor(minw/4))
-    local bx = math.abs(butpos1[3]-butpos1[1])
-    local by = math.abs(butpos1[4]-butpos1[2])
+    local bx = math.abs(butpos[1][3]-butpos[1][1])
+    local by = math.abs(butpos[1][4]-butpos[1][2])
     local minb = math.min(bx,by)
     bfontsize = math.floor(6*minb/20)
     bfont = love.graphics.newFont(bfontsize)
@@ -144,6 +146,13 @@ local function setupPauseMenu() --Calculate window, text and button positions, r
         love.graphics.rectangle("line",0,0,bx-1,by-1)
         love.graphics.setColor(1,1,1,1)
     end)
+end
+
+local function buttonSelected(x,y,bnum)
+    if (not buttonclicked or buttonclicked == bnum) and x >= butpos[bnum][1] and x <= butpos[bnum][3] and y >= butpos[bnum][2] and y <= butpos[bnum][4] then
+        return true
+    end
+    return false
 end
 
 function pausestate.init(laststate,argtab)
@@ -176,14 +185,14 @@ function pausestate.draw()
     love.graphics.rectangle("fill",winpos[1],winpos[2],winpos[3]-winpos[1],winpos[4]-winpos[2])
     love.graphics.setColor(1,1,1,1)
     love.graphics.printf("PAUSE",pfont,winpos[1],winpos[6],winpos[5],"center")
-    if buttonclicked == 1 then love.graphics.draw(cbutpress,butpos1[1],butpos1[2]) else love.graphics.draw(cbut,butpos1[1],butpos1[2]) end
-    if buttonclicked == 2 then love.graphics.draw(cbutpress,butpos2[1],butpos2[2]) else love.graphics.draw(cbut,butpos2[1],butpos2[2]) end
-    if buttonclicked == 3 then love.graphics.draw(cbutpress,butpos3[1],butpos3[2]) else love.graphics.draw(cbut,butpos3[1],butpos3[2]) end
-    if buttonclicked == 4 then love.graphics.draw(cbutpress,butpos4[1],butpos4[2]) else love.graphics.draw(cbut,butpos4[1],butpos4[2]) end
-    love.graphics.printf("Menu",bfont,butpos1[1],math.floor(butpos1[4]+((butpos1[2]-butpos1[4]-bfontsize)/2)),butpos1[3]-butpos1[1],"center")
-    love.graphics.printf("Reset",bfont,butpos2[1],math.floor(butpos2[4]+((butpos2[2]-butpos2[4]-bfontsize)/2)),butpos2[3]-butpos2[1],"center")
-    love.graphics.printf("Play",bfont,butpos3[1],math.floor(butpos3[4]+((butpos3[2]-butpos3[4]-bfontsize)/2)),butpos3[3]-butpos3[1],"center")
-    love.graphics.printf("Save & Quit",bfont,butpos4[1],math.floor(butpos4[4]+((butpos4[2]-butpos4[4]-bfontsize)/2)),butpos4[3]-butpos4[1],"center")
+    local mx, my = _CAState.getMousePos()
+    for i = 1,4 do
+        if buttonSelected(mx,my,i) then love.graphics.draw(cbutpress,butpos[i][1],butpos[i][2]) else love.graphics.draw(cbut,butpos[i][1],butpos[i][2]) end
+    end
+    love.graphics.printf("Menu",bfont,butpos[1][1],math.floor(butpos[1][4]+((butpos[1][2]-butpos[1][4]-bfontsize)/2)),butpos[1][3]-butpos[1][1],"center")
+    love.graphics.printf("Reset",bfont,butpos[2][1],math.floor(butpos[2][4]+((butpos[2][2]-butpos[2][4]-bfontsize)/2)),butpos[2][3]-butpos[2][1],"center")
+    love.graphics.printf("Play",bfont,butpos[3][1],math.floor(butpos[3][4]+((butpos[3][2]-butpos[3][4]-bfontsize)/2)),butpos[3][3]-butpos[3][1],"center")
+    love.graphics.printf("Save & Quit",bfont,butpos[4][1],math.floor(butpos[4][4]+((butpos[4][2]-butpos[4][4]-bfontsize)/2)),butpos[4][3]-butpos[4][1],"center")
 end
 
 function pausestate.keyreleased(key)
@@ -197,18 +206,13 @@ function pausestate.keyreleased(key)
 end
 
 function pausestate.mousepressed(x,y,button)
-    if x >= butpos1[1] and x <= butpos1[3] and y >= butpos1[2] and y <= butpos1[4] then
-        buttonclicked = 1
-    elseif x >= butpos2[1] and x <= butpos2[3] and y >= butpos2[2] and y <= butpos2[4] then
-        buttonclicked = 2
-    elseif x >= butpos3[1] and x <= butpos3[3] and y >= butpos3[2] and y <= butpos3[4] then
-        buttonclicked = 3
-    elseif x >= butpos4[1] and x <= butpos4[3] and y >= butpos4[2] and y <= butpos4[4] then
-        buttonclicked = 4
-    else
-        return
+    for i = 1,4 do
+        if x >= butpos[i][1] and x <= butpos[i][3] and y >= butpos[i][2] and y <= butpos[i][4] then
+            love.audio.play(sndclick)
+            buttonclicked = i
+            break
+        end
     end
-    love.audio.play(sndclick)
 end
 
 function pausestate.mousereleased(x,y,button)
