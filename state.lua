@@ -12,9 +12,9 @@ local kbmode = require("kbmode") --Keyboard mode
 
 state.list = {} --List of states
 
-local function saveSettings()
-    local settstr = tostring(_CAGridW).."\n"..tostring(_CAGridH).."\n"..tostring(_CAPlayers).."\n"..tostring(_CAAI).."\n"..tostring(_CAAILevel)
-    love.filesystem.write("settings.txt",settstr)
+function state.saveSettings()
+    local settstr = tostring(_CAGridW).."\n"..tostring(_CAGridH).."\n"..tostring(_CAAILevel).."\n"..tostring(_CAPlayer1).."\n"..tostring(_CAPlayer2).."\n"..tostring(_CAPlayer3).."\n"..tostring(_CAPlayer4)
+    love.filesystem.write("settings2.txt",settstr)
 end
 
 function state.update(dt)
@@ -89,7 +89,7 @@ function state.focus(focus) --Window focus callback function
 end
 
 function state.quit() --love.quit callback function, saves settings
-    saveSettings()
+    state.saveSettings()
     if curstatedata and curstatedata.quit then
         return curstatedata.quit()
     end

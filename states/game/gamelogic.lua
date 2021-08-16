@@ -25,7 +25,7 @@ local function nextplayer() --Set the current player to next player
     if logic.players < 2 then return end
     repeat
         logic.curplayer = logic.curplayer + 1
-        if logic.curplayer > #logic.playertab then
+        if logic.curplayer > 4 then
             logic.curplayer = 1
         end
     until(logic.playertab[logic.curplayer])
@@ -160,6 +160,8 @@ logic.playermoved = {false,false} --Has player moved?
 
 logic.players = 2 --Total players playing (1-4)
 
+logic.startplayers = 2 --Total player count (including eliminated players)
+
 logic.atomstack = {} --Atom split stack
 
 logic.willexplode = {1,1,false} --Will an atom tile explode {x,y,willExplode}
@@ -176,8 +178,7 @@ logic.coltab = { --table of atom colors by player number
     [4] = {1,1,0,1} --yellow
 }
 
-function logic.loadAll(gridWidth,gridHeight,players,aiplayers,aidifficulty) --Reset most of the game state with given values
-    logic.players = players
+function logic.loadAll(gridWidth,gridHeight,aidifficulty,pttab) --Reset most of the game state with given values
     logic.grid = {}
     logic.critgrid = {}
     for x = 1,gridWidth do
@@ -193,18 +194,35 @@ function logic.loadAll(gridWidth,gridHeight,players,aiplayers,aidifficulty) --Re
     end
     logic.animplaying = false
     logic.winsize[1],logic.winsize[2] = getWinSize(gridWidth,gridHeight)
-    logic.curplayer = 1
+    logic.curplayer = -1
     logic.playertab = {}
     logic.playeratoms = {}
     logic.playermoved = {}
-    logic.players = players
-    ai.init(logic,players,aiplayers,aidifficulty)
-    for i = 1,players do
-        table.insert(logic.playertab,true)
-        table.insert(logic.playeratoms,0)
-        table.insert(logic.playermoved,false)
+    logic.players = 0
+    ai.init(logic,aidifficulty)
+    for i = 1,4 do
+		if pttab[i] > 0 then
+			if logic.curplayer == -1 then logic.curplayer = i end
+			logic.players = logic.players + 1
+			logic.playertab[i] = true
+			logic.playeratoms[i] = 0
+			logic.playermoved[i] = false
+			if pttab[i] == 3 then logic.playertab[i] = "dummy" end
+			if pttab[i] == 2 then
+				logic.ai.playertab[i] = true
+			else
+				logic.ai.playertab[i] = false
+			end
+		end
     end
-    logic.atomstack = {}
+	if logic.curplayer == -1 or logic.players < 2 then
+		logic.winsize[1], logic.winsize[2] = nil, nil
+		_CAState.printmsg("2 or more players required to play!",3)
+        _CAState.change("menu")
+		return
+	end
+    logic.startplayers = logic.players
+	logic.atomstack = {}
     logic.willexplode = {1,1,false}
     logic.playerwon = 0
     logic.expcount = 0
@@ -227,23 +245,26 @@ function logic.tick(dt) --Game tick - disqualifies players, picks the winner, ex
     sndexplode:setPitch(0.5)
     sndput:setPitch(0.75)
     if logic.expcount > 20000 then 
-        _CAState.printmsg("More than 20000 simultaneous explosions! Stopping...",5)
+        _CAState.printmsg("More than 20000 simultaneous explosions! Stopping...",4)
         _CAState.change("menu") 
     end
-    for k,v in ipairs(logic.playeratoms) do
-        if logic.playertab[k] and v <= 0 and logic.playermoved[k] then
-            logic.players = logic.players - 1
-            logic.playertab[k] = false
-        end
+    for i = 1,4 do
+		local v = logic.playeratoms[i]
+		if v ~= nil then
+			if logic.playertab[i] and v <= 0 and logic.playermoved[i] then
+				logic.players = logic.players - 1
+				logic.playertab[i] = false
+			end
+		end
     end
     if logic.players < 2 then
-        for k,v in ipairs(logic.playertab) do
-            if v then logic.playerwon = k; return end
+        for i = 1,4 do
+            if logic.playertab[i] then logic.playerwon = i; return end
         end
     end
     while not logic.playertab[logic.curplayer] do
         logic.curplayer = logic.curplayer + 1
-        if logic.curplayer > #logic.playertab then
+        if logic.curplayer > 4 then
             logic.curplayer = 1
         end
     end
@@ -343,15 +364,15 @@ function logic.loadGame() --Loads the game, returns nil (on failure) or the new 
     logic.playeratoms = {}
     logic.playermoved = {}
     ai.playertab = {}
-    local players = math.min(string.byte(str,6),4)
+    logic.startplayers = math.min(string.byte(str,6),4)
     logic.players = math.min(string.byte(str,7),4)
     ai.difficulty = math.min(string.byte(str,8),3)
     logic.curplayer = string.byte(str,9)
-    for i = 1,players do
+    for i = 1,4 do
         cpst(i,string.byte(str,9+i))
         cai(i,string.byte(str,13+i))
     end
-    if logic.curplayer == 0 or logic.curplayer > players then
+    if logic.curplayer == 0 or logic.curplayer > 4 or logic.playertab[logic.curplayer] == nil then
         nextplayer()
     end
     local ttime = (string.byte(str,20)*3600)+(string.byte(str,19)*60)+string.byte(str,18)
@@ -371,5 +392,9 @@ function logic.loadGame() --Loads the game, returns nil (on failure) or the new 
     end
     return ttime
 end
+
+logic.nextPlayer = nextplayer
+
+logic.setAtoms = setAtomsUnsafe
 
 return logic

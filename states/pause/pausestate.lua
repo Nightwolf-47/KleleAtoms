@@ -38,15 +38,17 @@ local gametime = 0.0 --A copy of in-game time (for game saving)
 
 local sndclick = love.audio.newSource("sounds/click.wav","static")
 
-local function pst(num) --Convert player status from 2 booleans to a number 0-2
-    if gamelogic.playertab[num] then
+local function pst(num) --Convert player status from 2 variables to a number 0-2 (or 255 if player does not exist)
+    if gamelogic.playertab[num] == true then
         if gamelogic.playermoved[num] then
             return 2
         else
             return 1
         end
-    else
+    elseif gamelogic.playertab[num] == false then
         return 0
+	else
+		return 255
     end
 end
 
@@ -61,7 +63,7 @@ end
 local function saveGame() --Save the game to savegame.ksf file
     local gw = #gamelogic.grid
     local gh = #gamelogic.grid[1]
-    local str = "KSF"..string.char(gw % 256)..string.char(gh % 256)..string.char(math.min(#gamelogic.playertab,4))..string.char(gamelogic.players % 256)..string.char(gamelogic.ai.difficulty % 256)..string.char(gamelogic.curplayer % 256)..string.char(pst(1))..string.char(pst(2))..string.char(pst(3))..string.char(pst(4))..string.char(pai(1))..string.char(pai(2))..string.char(pai(3))..string.char(pai(4))..string.char(gametime % 60)..string.char((gametime/60) % 60)..string.char((gametime/3600) % 256)
+    local str = "KSF"..string.char(gw % 256)..string.char(gh % 256)..string.char(math.min(gamelogic.startplayers,4))..string.char(gamelogic.players % 256)..string.char(gamelogic.ai.difficulty % 256)..string.char(gamelogic.curplayer % 256)..string.char(pst(1))..string.char(pst(2))..string.char(pst(3))..string.char(pst(4))..string.char(pai(1))..string.char(pai(2))..string.char(pai(3))..string.char(pai(4))..string.char(gametime % 60)..string.char((gametime/60) % 60)..string.char((gametime/3600) % 256)
     for x = 1,gw do
         for y = 1,gh do
             str = str..string.char(gamelogic.grid[x][y].player % 256)..string.char(#gamelogic.grid[x][y].atoms % 256)

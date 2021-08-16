@@ -161,17 +161,9 @@ ai.playertab = {false,false}
 
 ai.difficulty = 2
 
-function ai.init(logictab,pnum,aipnum,ailevel) --Initialize AI
+function ai.init(logictab,ailevel) --Initialize AI
     logic = logictab
     ai.playertab = {}
-    for i = pnum,1,-1 do
-        if aipnum > 0 then
-            ai.playertab[i] = true
-            aipnum = aipnum - 1
-        else
-            ai.playertab[i] = false
-        end
-    end
     ai.difficulty = ailevel
 end
 
