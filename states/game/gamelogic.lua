@@ -321,7 +321,7 @@ function logic.drawVictoryWin(timestr) --Draw victory window and make background
     love.graphics.rectangle("fill",msgx,msgy,256,128)
     love.graphics.setColor(0,0,0,1)
     love.graphics.rectangle("line",msgx,msgy,256,128)
-    local str = "Player "..tostring(logic.playerwon).." ("..colornames[logic.playerwon]..") has won!\nTime: "..timestr.."\nClick to continue..."
+    local str = colornames[logic.playerwon].." has won!\nTime: "..timestr.."\nClick to continue..."
     love.graphics.printf(str,_CAFont16,msgx+8,msgy+50,240,"center")
     love.graphics.setColor(1,1,1,1)
     love.graphics.printf("Victory!",_CAFont24,msgx+8,msgy+8,240,"center")

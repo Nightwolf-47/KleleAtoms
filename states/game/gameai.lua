@@ -4,6 +4,8 @@ local aitime = 0.0 --Timer for AI (it can only move after cAIDELAY)
 
 local ai = {}
 
+local ccdchecktab = {} --Table of diagonally closest tiles to a corner, created every time AI code is initialized
+
 local function aiIsTileEnemy(x,y) --Check if a tile belongs to another player
     local tplayer = logic.grid[x][y].player
     return (tplayer ~= 0 and tplayer ~= logic.curplayer)
@@ -34,7 +36,7 @@ local function aiCheckAdvantage(x,y,patoms) --Check if you have advantage over a
     return false
 end
 
-local function aiCornerCheck(x,y) --Check if enemy or the current player has an undefended corner (1 atom on every side near the corner)
+local function aiCornerCheck(x,y) --Check if enemy or the current player has an undefended corner (1 atom on every side near the corner and no 2 atom tile diagonally from the corner)
     if logic.critgrid[x][y] > 2 then return false end
     local ccval = 0
     local patoms = -2
@@ -42,6 +44,8 @@ local function aiCornerCheck(x,y) --Check if enemy or the current player has an 
     if y < #logic.grid[1] and logic.grid[x][y+1].player > 0 and patoms >= #logic.grid[x][y+1].atoms-logic.critgrid[x][y+1] then ccval = ccval + 1 end
     if x > 1 and logic.grid[x-1][y].player > 0 and patoms >= #logic.grid[x-1][y].atoms-logic.critgrid[x-1][y] then ccval = ccval + 1 end
     if x < #logic.grid and logic.grid[x+1][y].player > 0 and patoms >= #logic.grid[x+1][y].atoms-logic.critgrid[x+1][y] then ccval = ccval + 1 end
+	local cposx, cposy = ccdchecktab[x][y][1], ccdchecktab[x][y][2]
+	if aiIsTileEnemy(cposx,cposy) and #logic.grid[x][y].atoms == #logic.grid[cposx][cposy].atoms-2 then return false end
     return (ccval >= 2)
 end
 
@@ -165,6 +169,12 @@ function ai.init(logictab,ailevel) --Initialize AI
     logic = logictab
     ai.playertab = {}
     ai.difficulty = ailevel
+	local gridw = #logic.grid
+	local gridh = #logic.grid[1]
+	ccdchecktab = {
+		[1] = {[1] = {2,2}, [gridh] = {2,gridh-1}},
+		[gridw] = {[1] = {gridw-1,2}, [gridh] = {gridw-1,gridh-1}}
+	} 
 end
 
 function ai.resetTime() --Reset AI delay timer
