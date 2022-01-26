@@ -9,8 +9,8 @@ A game where you have to take atoms from other players by blowing up yours.
 Otherwise follow those steps:  
 
 - Download LOVE for your platform from https://love2d.org/.
-- Download latest KłełeAtoms release from this repository (https://github.com/Nightwolf-47/KleleAtoms/releases)
-- Drag and drop KłełeAtoms .love file to LOVE executable
+- Download the latest KłełeAtoms .love file from this repository (https://github.com/Nightwolf-47/KleleAtoms/releases)
+- Drag and drop the KłełeAtoms .love file to the LOVE executable
 
 Alternatively, you can play it online on [Newgrounds](https://www.newgrounds.com/portal/view/803623).
 
