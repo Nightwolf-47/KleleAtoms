@@ -201,28 +201,28 @@ function logic.loadAll(gridWidth,gridHeight,aidifficulty,pttab) --Reset most of 
     logic.players = 0
     ai.init(logic,aidifficulty)
     for i = 1,4 do
-		if pttab[i] > 0 then
-			if logic.curplayer == -1 then logic.curplayer = i end
-			logic.players = logic.players + 1
-			logic.playertab[i] = true
-			logic.playeratoms[i] = 0
-			logic.playermoved[i] = false
-			if pttab[i] == 3 then logic.playertab[i] = "dummy" end
-			if pttab[i] == 2 then
-				logic.ai.playertab[i] = true
-			else
-				logic.ai.playertab[i] = false
-			end
-		end
+        if pttab[i] > 0 then
+            if logic.curplayer == -1 then logic.curplayer = i end
+            logic.players = logic.players + 1
+            logic.playertab[i] = true
+            logic.playeratoms[i] = 0
+            logic.playermoved[i] = false
+            if pttab[i] == 3 then logic.playertab[i] = "dummy" end
+            if pttab[i] == 2 then
+                logic.ai.playertab[i] = true
+            else
+                logic.ai.playertab[i] = false
+            end
+        end
     end
-	if logic.curplayer == -1 or logic.players < 2 then
-		logic.winsize[1], logic.winsize[2] = nil, nil
-		_CAState.printmsg("2 or more players required to play!",3)
+    if logic.curplayer == -1 or logic.players < 2 then
+        logic.winsize[1], logic.winsize[2] = nil, nil
+        _CAState.printmsg("2 or more players required to play!",3)
         _CAState.change("menu")
-		return
-	end
+        return
+    end
     logic.startplayers = logic.players
-	logic.atomstack = {}
+    logic.atomstack = {}
     logic.willexplode = {1,1,false}
     logic.playerwon = 0
     logic.expcount = 0
@@ -249,13 +249,13 @@ function logic.tick(dt) --Game tick - disqualifies players, picks the winner, ex
         _CAState.change("menu") 
     end
     for i = 1,4 do
-		local v = logic.playeratoms[i]
-		if v ~= nil then
-			if logic.playertab[i] and v <= 0 and logic.playermoved[i] then
-				logic.players = logic.players - 1
-				logic.playertab[i] = false
-			end
-		end
+        local v = logic.playeratoms[i]
+        if v ~= nil then
+            if logic.playertab[i] and v <= 0 and logic.playermoved[i] then
+                logic.players = logic.players - 1
+                logic.playertab[i] = false
+            end
+        end
     end
     if logic.players < 2 then
         for i = 1,4 do

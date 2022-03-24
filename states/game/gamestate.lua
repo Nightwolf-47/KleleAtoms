@@ -27,10 +27,10 @@ local function getGameTime()
 end
 
 local function pauseGame()
-	if tutorial then
-		_CAState.change("menu")
-		return
-	end
+    if tutorial then
+        _CAState.change("menu")
+        return
+    end
     if #gamelogic.atomstack > 0 or gamelogic.animplaying then
         pausing = true
         _CAState.printmsg("Pausing...",0.1)
@@ -47,18 +47,18 @@ function gamestate.init(laststate,argtab)
     exiting = nil
     screenshot = nil
     pausing = false
-	tutorial = false
+    tutorial = false
     if laststate ~= "pause" or (argtab and argtab[1] == "restart") then
-		restarttime = 0.0
-		local ttime = nil
-		if argtab and argtab[1] == "tutorial" then
-			tutorial = true
-			gamelogic.loadAll(10,6,2,{1,3,3,3})
-			gametut.init(gamelogic)
-		else
-			gamelogic.loadAll(_CAGridW,_CAGridH,_CAAILevel,{_CAPlayer1,_CAPlayer2,_CAPlayer3,_CAPlayer4})
-			ttime = gamelogic.loadGame()
-		end
+        restarttime = 0.0
+        local ttime = nil
+        if argtab and argtab[1] == "tutorial" then
+            tutorial = true
+            gamelogic.loadAll(10,6,2,{1,3,3,3})
+            gametut.init(gamelogic)
+        else
+            gamelogic.loadAll(_CAGridW,_CAGridH,_CAAILevel,{_CAPlayer1,_CAPlayer2,_CAPlayer3,_CAPlayer4})
+            ttime = gamelogic.loadGame()
+        end
         if ttime then restarttime = ttime; _CAState.printmsg("Saved game loaded.",2) end
         return gamelogic.winsize[1],gamelogic.winsize[2]
     else
@@ -71,9 +71,9 @@ function gamestate.update(dt)
     if gamelogic.playerwon == 0 then
         if pausing then pauseGame() end
         restarttime = restarttime + dt
-		if tutorial then
-			if gametut.update(dt) then return end
-		end
+        if tutorial then
+            if gametut.update(dt) then return end
+        end
         gamelogic.tick(dt)
     end
 end
@@ -87,28 +87,28 @@ function gamestate.draw() --Draw all stuff, move animated atoms and calculate at
     for i = 1,4 do
         gamelogic.playeratoms[i] = 0
     end
-	local k = 0
+    local k = 0
     for i = 1,4 do
-		local v = gamelogic.playertab[i]
-		if v ~= nil then
-			k = k + 1
-			local ypos = 20
-			local xpos = math.floor(k*gamelogic.winsize[1]/(gamelogic.startplayers+1)-12)
-			if not v then
-				love.graphics.setColor(0.5,0.5,0.5,1)
-			elseif gamelogic.curplayer == i then
-				love.graphics.setColor(1,1,1,1)
-				love.graphics.rectangle("fill",xpos-2,ypos-2,29,54)
-				love.graphics.setColor(gamelogic.coltab[i])
-			else
-				love.graphics.setColor(gamelogic.coltab[i])
-			end
-			if gamelogic.ai.playertab[i] then
-				love.graphics.draw(cplayerai,xpos,ypos)
-			else
-				love.graphics.draw(cplayer,xpos,ypos)
-			end
-		end
+        local v = gamelogic.playertab[i]
+        if v ~= nil then
+            k = k + 1
+            local ypos = 20
+            local xpos = math.floor(k*gamelogic.winsize[1]/(gamelogic.startplayers+1)-12)
+            if not v then
+                love.graphics.setColor(0.5,0.5,0.5,1)
+            elseif gamelogic.curplayer == i then
+                love.graphics.setColor(1,1,1,1)
+                love.graphics.rectangle("fill",xpos-2,ypos-2,29,54)
+                love.graphics.setColor(gamelogic.coltab[i])
+            else
+                love.graphics.setColor(gamelogic.coltab[i])
+            end
+            if gamelogic.ai.playertab[i] then
+                love.graphics.draw(cplayerai,xpos,ypos)
+            else
+                love.graphics.draw(cplayer,xpos,ypos)
+            end
+        end
     end
     for x = 1,#gamelogic.grid do
         for y = 1,#gamelogic.grid[1] do
@@ -158,7 +158,7 @@ function gamestate.draw() --Draw all stuff, move animated atoms and calculate at
     end
     love.graphics.setColor(1,1,1,1)
     love.graphics.printf(getGameTime(),_CAFont16,0,0,gamelogic.winsize[1]-2,"right")
-	if tutorial then gametut.draw() end
+    if tutorial then gametut.draw() end
     love.graphics.draw(cback,2,2)
 end
 
@@ -170,7 +170,7 @@ function gamestate.keyreleased(key)
             pauseGame()
         end
     end
-	if tutorial then gametut.keyreleased(key) end
+    if tutorial then gametut.keyreleased(key) end
 end
 
 function gamestate.mousepressed(x, y, button)
@@ -180,12 +180,12 @@ function gamestate.mousepressed(x, y, button)
         exiting = button
     else
         if tutorial and gametut.mousepressed(x,y,button) then 
-			return 
-		elseif x >= 10 and x < 10+gw*gamelogic.cGRIDSIZE and y >= 90 and y < 90+gh*gamelogic.cGRIDSIZE then
-			local pressx = math.floor((x-10)/gamelogic.cGRIDSIZE)+1
-        	local pressy = math.floor((y-90)/gamelogic.cGRIDSIZE)+1
-        	gamelogic.clickedTile(pressx,pressy)
-		end
+            return 
+        elseif x >= 10 and x < 10+gw*gamelogic.cGRIDSIZE and y >= 90 and y < 90+gh*gamelogic.cGRIDSIZE then
+            local pressx = math.floor((x-10)/gamelogic.cGRIDSIZE)+1
+            local pressy = math.floor((y-90)/gamelogic.cGRIDSIZE)+1
+            gamelogic.clickedTile(pressx,pressy)
+        end
     end
 end
 

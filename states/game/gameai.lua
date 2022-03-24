@@ -44,8 +44,8 @@ local function aiCornerCheck(x,y) --Check if enemy or the current player has an 
     if y < #logic.grid[1] and logic.grid[x][y+1].player > 0 and patoms >= #logic.grid[x][y+1].atoms-logic.critgrid[x][y+1] then ccval = ccval + 1 end
     if x > 1 and logic.grid[x-1][y].player > 0 and patoms >= #logic.grid[x-1][y].atoms-logic.critgrid[x-1][y] then ccval = ccval + 1 end
     if x < #logic.grid and logic.grid[x+1][y].player > 0 and patoms >= #logic.grid[x+1][y].atoms-logic.critgrid[x+1][y] then ccval = ccval + 1 end
-	local cposx, cposy = ccdchecktab[x][y][1], ccdchecktab[x][y][2]
-	if aiIsTileEnemy(cposx,cposy) and #logic.grid[x][y].atoms == #logic.grid[cposx][cposy].atoms-2 then return false end
+    local cposx, cposy = ccdchecktab[x][y][1], ccdchecktab[x][y][2]
+    if aiIsTileEnemy(cposx,cposy) and #logic.grid[x][y].atoms == #logic.grid[cposx][cposy].atoms-2 then return false end
     return (ccval >= 2)
 end
 
@@ -169,12 +169,12 @@ function ai.init(logictab,ailevel) --Initialize AI
     logic = logictab
     ai.playertab = {}
     ai.difficulty = ailevel
-	local gridw = #logic.grid
-	local gridh = #logic.grid[1]
-	ccdchecktab = {
-		[1] = {[1] = {2,2}, [gridh] = {2,gridh-1}},
-		[gridw] = {[1] = {gridw-1,2}, [gridh] = {gridw-1,gridh-1}}
-	} 
+    local gridw = #logic.grid
+    local gridh = #logic.grid[1]
+    ccdchecktab = {
+        [1] = {[1] = {2,2}, [gridh] = {2,gridh-1}},
+        [gridw] = {[1] = {gridw-1,2}, [gridh] = {gridw-1,gridh-1}}
+    } 
 end
 
 function ai.resetTime() --Reset AI delay timer

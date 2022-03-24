@@ -10,6 +10,6 @@ function love.conf(t)
     t.modules.physics = false
     t.window.usedpiscale = false
     t.externalstorage = true
-	t.console = false
+    t.console = false
     t.window.icon = "graphics/icon.png"
 end

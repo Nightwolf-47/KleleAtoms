@@ -47,8 +47,8 @@ local function pst(num) --Convert player status from 2 variables to a number 0-2
         end
     elseif gamelogic.playertab[num] == false then
         return 0
-	else
-		return 255
+    else
+        return 255
     end
 end
 

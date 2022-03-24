@@ -79,85 +79,85 @@ local mcoltab = { --table of atom colors by player number
 }
 
 local pvalnames = { --Player type variable names
-	"_CAPlayer1",
-	"_CAPlayer2",
-	"_CAPlayer3",
-	"_CAPlayer4"
+    "_CAPlayer1",
+    "_CAPlayer2",
+    "_CAPlayer3",
+    "_CAPlayer4"
 }
 
 local function activePlayerCount()
-	local pcount = 0
-	for i = 1,4 do
-		if _G[pvalnames[i]] > 0 then
-			pcount = pcount + 1
-		end
-	end
-	return pcount
+    local pcount = 0
+    for i = 1,4 do
+        if _G[pvalnames[i]] > 0 then
+            pcount = pcount + 1
+        end
+    end
+    return pcount
 end
 
 local function drawPIcon(pnum) --Draw appropriate player type icon
-	local val = _G[pvalnames[pnum]]
-	if val == 0 then
-		return mplayerno
-	elseif val == 1 then
-		return mplayer,mcoltab[pnum]
-	elseif val == 2 then
-		return mplayerai,mcoltab[pnum]
-	end
+    local val = _G[pvalnames[pnum]]
+    if val == 0 then
+        return mplayerno
+    elseif val == 1 then
+        return mplayer,mcoltab[pnum]
+    elseif val == 2 then
+        return mplayerai,mcoltab[pnum]
+    end
 end
 
 local function switchPVal(pnum,button) --Change player type value after button has been clicked
-	local val = _G[pvalnames[pnum]]
-	if button == 2 then
-		val = val - 1
-		if val < 0 or (val == 0 and activePlayerCount() <= 2) then val = 2 end
-	else
-		val = val + 1
-		if val > 2 then
-			if activePlayerCount() <= 2 then
-				val = 1
-			else
-				val = 0
-			end
-		end
-	end
-	_G[pvalnames[pnum]] = val
+    local val = _G[pvalnames[pnum]]
+    if button == 2 then
+        val = val - 1
+        if val < 0 or (val == 0 and activePlayerCount() <= 2) then val = 2 end
+    else
+        val = val + 1
+        if val > 2 then
+            if activePlayerCount() <= 2 then
+                val = 1
+            else
+                val = 0
+            end
+        end
+    end
+    _G[pvalnames[pnum]] = val
 end
 
 local function mp1button(x,y,button)
-	if not x then --Drawing function
-		return drawPIcon(1)
-	else --Click function
-		switchPVal(1,button)
-	end
+    if not x then --Drawing function
+        return drawPIcon(1)
+    else --Click function
+        switchPVal(1,button)
+    end
 end
 
 local function mp2button(x,y,button)
-	if not x then
-		return drawPIcon(2)
-	else
-		switchPVal(2,button)
-	end
+    if not x then
+        return drawPIcon(2)
+    else
+        switchPVal(2,button)
+    end
 end
 
 local function mp3button(x,y,button)
-	if not x then
-		return drawPIcon(3)
-	else
-		switchPVal(3,button)
-	end
+    if not x then
+        return drawPIcon(3)
+    else
+        switchPVal(3,button)
+    end
 end
 
 local function mp4button(x,y,button)
-	if not x then
-		return drawPIcon(4)
-	else
-		switchPVal(4,button)
-	end
+    if not x then
+        return drawPIcon(4)
+    else
+        switchPVal(4,button)
+    end
 end
 
 local function tutorialfunc(x,y,button)
-	_CAState.change("game",{"tutorial"})
+    _CAState.change("game",{"tutorial"})
 end
 
 local menuatoms = {} --Table of background atoms
@@ -174,11 +174,11 @@ local buttons = {
     {mgw,"Set grid width. (7-30)",50,325,"slider","_CAGridW",7,30,0.3,0.1}, --Grid Width
     {mgh,"Set grid height. (4-20)",245,325,"slider","_CAGridH",4,20,0.3,0.1}, --Grid Height
     {mp1button,"Player 1 type (nothing/player/AI)",425,325,"small",mp1button}, --Player 1 type
-	{mp2button,"Player 2 type (nothing/player/AI)",470,325,"small",mp2button}, --Player 2 type
-	{mp3button,"Player 3 type (nothing/player/AI)",515,325,"small",mp3button}, --Player 3 type
-	{mp4button,"Player 4 type (nothing/player/AI)",560,325,"small",mp4button}, --Player 4 type
-	{mailevelicon,"Set the AI difficulty. (1-3)",50,205,"slider","_CAAILevel",1,3,0.3,0.2}, --AI difficulty level
-	{mtutorial,"Start the tutorial.",440,205,"click",tutorialfunc}, --Tutorial button
+    {mp2button,"Player 2 type (nothing/player/AI)",472,325,"small",mp2button}, --Player 2 type
+    {mp3button,"Player 3 type (nothing/player/AI)",519,325,"small",mp3button}, --Player 3 type
+    {mp4button,"Player 4 type (nothing/player/AI)",566,325,"small",mp4button}, --Player 4 type
+    {mailevelicon,"Set the AI difficulty. (1-3)",50,205,"slider","_CAAILevel",1,3,0.3,0.2}, --AI difficulty level
+    {mtutorial,"Start the tutorial.",440,205,"click",tutorialfunc}, --Tutorial button
 }
 
 local function spawnAtom(color,xpos,maxatoms) --Spawn menu background atoms unless atom count > maxatoms
@@ -275,8 +275,8 @@ function menustate.draw()
         local buttonselected = false
         if buttonpressed == 0 or buttonpressed == k then
             local mx, my = _CAState.getMousePos()
-			if (v[5] == "small" and mx >= v[3] and mx < v[3]+40 and my >= v[4] and my < v[4]+75)
-			or (v[5] ~= "small" and mx >= v[3] and mx < v[3]+150 and my >= v[4] and my < v[4]+75) then --hover
+            if (v[5] == "small" and mx >= v[3] and mx < v[3]+40 and my >= v[4] and my < v[4]+75)
+            or (v[5] ~= "small" and mx >= v[3] and mx < v[3]+150 and my >= v[4] and my < v[4]+75) then --hover
                 buttonselected = true
                 if buttonpressed == 0 then
                     love.graphics.setColor(1,0.65,0,1)
@@ -285,29 +285,29 @@ function menustate.draw()
             end
         end
         love.graphics.setColor(1,1,1,1)
-		if v[5] == "small" then
-			if buttonselected then love.graphics.draw(msbutsel,v[3],v[4]) else love.graphics.draw(msbutton,v[3],v[4]) end
-		else
-			if buttonselected then love.graphics.draw(mbutsel,v[3],v[4]) else love.graphics.draw(mbutton,v[3],v[4]) end
-		end
+        if v[5] == "small" then
+            if buttonselected then love.graphics.draw(msbutsel,v[3],v[4]) else love.graphics.draw(msbutton,v[3],v[4]) end
+        else
+            if buttonselected then love.graphics.draw(mbutsel,v[3],v[4]) else love.graphics.draw(mbutton,v[3],v[4]) end
+        end
         local micon = v[1]
-		local ncoltab = nil
+        local ncoltab = nil
         if type(v[1]) == "function" then micon,ncoltab = v[1]() end
-		if ncoltab then love.graphics.setColor(ncoltab) end
+        if ncoltab then love.graphics.setColor(ncoltab) end
         if v[5] == "click" or v[5] == "nofunc" then
             love.graphics.draw(micon,v[3]+43,v[4]+5)
         elseif v[5] == "slider" then
             love.graphics.draw(micon,v[3]+10,v[4]+5)
             love.graphics.setColor(0,0,0,1)
             love.graphics.print(_G[v[6]],_CAFont24,v[3]+100,v[4]+23)
-		elseif v[5] == "small" then
-			love.graphics.draw(micon,v[3]+8,v[4]+10)
+        elseif v[5] == "small" then
+            love.graphics.draw(micon,v[3]+8,v[4]+10)
         elseif v[5] == "switch" then
             love.graphics.draw(micon,v[3]+10,v[4]+5)
             love.graphics.setColor(0,0,0,1)
             love.graphics.print(_G[v[6]],_CAFont24,v[3]+100,v[4]+23)
         end
-		love.graphics.setColor(1,1,1,1)
+        love.graphics.setColor(1,1,1,1)
     end
     if buttonpressed > 0 then
         love.graphics.setColor(1,0.65,0,1)
@@ -333,7 +333,7 @@ function menustate.mousepressed(x,y,button)
     if menutimer >= 0.3 and (button == 1 or button == 2) then
         for k,v in ipairs(buttons) do
             if (v[5] == "small" and x >= v[3] and x < v[3]+40 and y >= v[4] and y < v[4]+75)
-			or (v[5] ~= "small" and x >= v[3] and x < v[3]+150 and y >= v[4] and y < v[4]+75) then --pressed
+            or (v[5] ~= "small" and x >= v[3] and x < v[3]+150 and y >= v[4] and y < v[4]+75) then --pressed
                 love.audio.play(sndclick)
                 if v[5] == "click" or v[5] == "small" then
                     requestedfunc = {v[6],x,y,button}
