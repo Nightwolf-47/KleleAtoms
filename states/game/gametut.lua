@@ -14,7 +14,7 @@ local logic = nil
 --"wait", time - pause execution for a certain time in seconds
 --"clear" - clear the entire grid
 local events = {
-    {"setptypes",{3,3,3,3}},
+    {"setptypes",{9,9,9,9}},
     {"textbox","Welcome to the KłełeAtoms tutorial! It will teach you the basics of KłełeAtoms.\n\nYou can always press the pause button to quit the tutorial.\n\nPress any key or click the text box to continue...",0,1},
     {"textbox","Each player can place one atom per turn on empty or their own tiles.",0,1},
     {"setatoms", 3, 4, 2, 1},
@@ -32,28 +32,28 @@ local events = {
     {"putatom", 4, 5, 2},
     {"curplayer",1},
     {"wait", 1},
-    {"setptypes",{3,3,3,3}},
+    {"setptypes",{9,9,9,9}},
     {"textbox","The atoms will explode if too many are present on one tile.\n\nAtoms in the corners explode if 2 or more are present.",0,1},
     {"clear"},
     {"setatoms", 1, 1, 1, 1},
     {"wait", 0.5},
     {"putatom", 1, 1, 1},
     {"wait", 1},
-    {"setptypes",{3,3,3,3}},
+    {"setptypes",{9,9,9,9}},
     {"textbox","On the sides they explode if 3 or more are present.",0,1},
     {"clear"},
     {"setatoms", 2, 1, 2, 2},
     {"wait", 0.5},
     {"putatom", 2, 1, 2},
     {"wait", 1},
-    {"setptypes",{3,3,3,3}},
+    {"setptypes",{9,9,9,9}},
     {"textbox","Anywhere else they only explode if 4 or more are present.",0,1},
     {"clear"},
     {"setatoms", 3, 2, 2, 3},
     {"wait", 0.5},
     {"putatom", 3, 2, 2},
     {"wait", 1},
-    {"setptypes",{3,3,3,3}},
+    {"setptypes",{9,9,9,9}},
     {"textbox","Atom explosions can make nearby atoms explode, causing chain reactions.",0,1},
     {"clear"},
     {"setatoms", 4, 2, 2, 3},
@@ -65,7 +65,7 @@ local events = {
     {"wait", 1},
     {"textbox","Exploding atoms turn nearby enemy atoms into current player's atoms.",0,1},
     {"clear"},
-    {"setptypes",{3,3,3,3}},
+    {"setptypes",{9,9,9,9}},
     {"curplayer",1},
     {"setatoms", 1, 2, 2, 3},
     {"setatoms", 2, 1, 2, 1},
@@ -98,9 +98,11 @@ local function parseNext() --Event parser, also handles state change after finis
                     logic.playertab[i] = true
                     logic.playeratoms[i] = 0
                     logic.playermoved[i] = false
-                    if pttab[i] == 3 then logic.playertab[i] = "dummy" end
-                    if pttab[i] == 2 then
+                    if pttab[i] == 9 then 
+                        logic.playertab[i] = "dummy"
+                    elseif pttab[i] > 1 then
                         logic.ai.playertab[i] = true
+                        logic.ai.difficulty[i] = pttab[i] - 1
                     else
                         logic.ai.playertab[i] = false
                     end
@@ -251,7 +253,7 @@ function gametut.mousepressed(x,y,button)
 end
 
 function gametut.keyreleased(key)
-    if gametut.finished then return end
+    if gametut.finished or _CAKBMode then return end
     if gametut.text and gametut.text[1] and (gametut.text[3] == 1 or gametut.text[3] == 3) then
         gametut.text = {nil,0,0}
     end

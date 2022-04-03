@@ -2,6 +2,8 @@ local scale = 1 --Mobile scale
 
 local res = {640,480} --Ingame resolution (units)
 
+local sxo = 0 --Safe area X offset (avoids drawing on the notch)
+
 local realx = 0 --Real screen width (in pixels)
 
 local realy = 0 --Real screen height (in pixels)
@@ -21,7 +23,9 @@ function mobile.init() --Initialize mobile mode
         realy = 600
         love.window.updateMode(realx,realy)
     else
+        sxo = love.window.getSafeArea()
         realx, realy = love.window.getDesktopDimensions()
+        realx = realx - sxo*2
         love.window.updateMode(realx,realy,{fullscreen=true})
     end
     isInit = true
@@ -29,7 +33,7 @@ end
 
 function mobile.predraw() --Setup graphics scaling
     scale = math.min(realx/res[1],realy/res[2])
-    movex = math.floor((realx/2)-((res[1]/2)*scale))
+    movex = math.floor((realx/2)-((res[1]/2)*scale))+sxo
     love.graphics.push()
     love.graphics.translate(movex,0)
     love.graphics.scale(scale,scale)

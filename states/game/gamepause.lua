@@ -1,6 +1,4 @@
-local pausestate = {} --PauseState class
-
-local background = nil --Background screenshot
+local gamepause = {} --GamePause class
 
 local gamelogic = nil --Gamelogic table reference
 
@@ -52,9 +50,9 @@ local function pst(num) --Convert player status from 2 variables to a number 0-2
     end
 end
 
-local function pai(num) --Convert AI player boolean to a 0 or 1
+local function pai(num) --Convert AI player boolean to a 0 or AI Difficulty + 1
     if gamelogic.ai.playertab[num] then
-        return 1
+        return gamelogic.ai.difficulty[num] + 1
     else
         return 0
     end
@@ -63,7 +61,7 @@ end
 local function saveGame() --Save the game to savegame.ksf file
     local gw = #gamelogic.grid
     local gh = #gamelogic.grid[1]
-    local str = "KSF"..string.char(gw % 256)..string.char(gh % 256)..string.char(math.min(gamelogic.startplayers,4))..string.char(gamelogic.players % 256)..string.char(gamelogic.ai.difficulty % 256)..string.char(gamelogic.curplayer % 256)..string.char(pst(1))..string.char(pst(2))..string.char(pst(3))..string.char(pst(4))..string.char(pai(1))..string.char(pai(2))..string.char(pai(3))..string.char(pai(4))..string.char(gametime % 60)..string.char((gametime/60) % 60)..string.char((gametime/3600) % 256)
+    local str = "KSF"..string.char(gw % 256)..string.char(gh % 256)..string.char(math.min(gamelogic.startplayers,4))..string.char(gamelogic.players % 256)..string.char(_CAAILevel % 256)..string.char(gamelogic.curplayer % 256)..string.char(pst(1))..string.char(pst(2))..string.char(pst(3))..string.char(pst(4))..string.char(pai(1))..string.char(pai(2))..string.char(pai(3))..string.char(pai(4))..string.char(gametime % 60)..string.char((gametime/60) % 60)..string.char((gametime/3600) % 256)
     for x = 1,gw do
         for y = 1,gh do
             str = str..string.char(gamelogic.grid[x][y].player % 256)..string.char(#gamelogic.grid[x][y].atoms % 256)
@@ -157,30 +155,23 @@ local function buttonSelected(x,y,bnum)
     return false
 end
 
-function pausestate.init(laststate,argtab)
-    if laststate == "game" and argtab and argtab[1] and argtab[2] and argtab[3] then
-        background = argtab[1]
-        gamelogic = argtab[2]
-        gametime = argtab[3]
-        winx, winy = _CAState.getWindowSize()
-        setupPauseMenu()
-    else
-        _CAState.printmsg("Couldn't load pause menu properly!",3)
-        _CAState.change("menu")
-    end
+function gamepause.init(logic,gtime)
+    gamelogic = logic
+    gametime = gtime
+    winx, winy = _CAState.getWindowSize()
+    setupPauseMenu()
+    gamelogic.paused = true
     pausetime = 0.0
     buttonclicked = nil
 end
 
-function pausestate.update(dt)
+function gamepause.update(dt)
     pausetime = pausetime + dt
 end
 
-function pausestate.draw()
-   _CAState.mobileAbsMode(true)
-    love.graphics.setColor(0.5,0.5,0.5,1)
-    if background then love.graphics.draw(background) end
-    _CAState.mobileAbsMode(false)
+function gamepause.draw()
+    love.graphics.setColor(0,0,0,0.5)
+    love.graphics.rectangle("fill",0,0,_CAState.getWindowSize())
     love.graphics.setColor(1,1,1,1)
     love.graphics.rectangle("line",winpos[1],winpos[2],winpos[3]-winpos[1],winpos[4]-winpos[2])
     love.graphics.setColor(0.2,0.2,0.2,1)
@@ -197,17 +188,17 @@ function pausestate.draw()
     love.graphics.printf("Save & Quit",bfont,butpos[4][1],math.floor(butpos[4][4]+((butpos[4][2]-butpos[4][4]-bfontsize)/2)),butpos[4][3]-butpos[4][1],"center")
 end
 
-function pausestate.keyreleased(key)
+function gamepause.keyreleased(key)
     if pausetime >= 0.3 then
         if key == "escape" then
-            _CAState.change("game")
+            gamelogic.paused = false
         elseif key == "m" then
             _CAState.change("menu")
         end
     end
 end
 
-function pausestate.mousepressed(x,y,button)
+function gamepause.mousepressed(x,y,button)
     for i = 1,4 do
         if x >= butpos[i][1] and x <= butpos[i][3] and y >= butpos[i][2] and y <= butpos[i][4] then
             love.audio.play(sndclick)
@@ -217,15 +208,18 @@ function pausestate.mousepressed(x,y,button)
     end
 end
 
-function pausestate.mousereleased(x,y,button)
+function gamepause.mousereleased(x,y,button)
     if buttonclicked == 1 then
+        gamelogic.paused = false
         _CAState.change("menu")
     elseif buttonclicked == 2 then
-        _CAState.change("game",{"restart"})
-    elseif buttonclicked == 3 then
+        gamelogic.paused = false
         _CAState.change("game")
+    elseif buttonclicked == 3 then
+        gamelogic.paused = false
     elseif buttonclicked == 4 then
         if saveGame() then
+            gamelogic.paused = false
             _CAState.printmsg("Game has been saved.",2)
             _CAState.change("menu")
         else
@@ -235,4 +229,4 @@ function pausestate.mousereleased(x,y,button)
     buttonclicked = nil
 end
 
-return pausestate
+return gamepause

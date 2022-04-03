@@ -8,6 +8,8 @@ local sndput = love.audio.newSource("sounds/put.wav","static")
 
 local sndexplode = love.audio.newSource("sounds/explode.wav","static")
 
+local ctile = love.graphics.newImage("graphics/tile.png")
+
 local colornames = {"Red","Blue","Green","Yellow"}
 
 local checktab = { --Order of chain reaction checks
@@ -20,7 +22,7 @@ local function getWinSize(w,h) --Get screen/window size based on grid size
     return (20+w*cGRIDSIZE),(100+h*cGRIDSIZE)
 end
 
-local function nextplayer() --Set the current player to next player
+local function nextPlayer() --Set the current player to next player
     ai.resetTime()
     if logic.players < 2 then return end
     repeat
@@ -103,7 +105,7 @@ local function prepareNewAtoms(tx,ty) --Place atom on a tile, prepare for explos
         logic.willexplode = {ttpos[1],ttpos[2],true}
         table.insert(logic.atomstack,ttpos)
     else
-        nextplayer()
+        nextPlayer()
     end
 end
 
@@ -170,6 +172,8 @@ logic.playerwon = 0 --0 if no player won yet
 
 logic.expcount = 0 --Explosion count (resets when explosions stop)
 
+logic.paused = false --Is the game paused?
+
 logic.coltab = { --table of atom colors by player number
     [0] = {0.2,0.2,0.2,1}, --only for testing
     [1] = {1,0.2,0.2,1}, --red
@@ -178,7 +182,7 @@ logic.coltab = { --table of atom colors by player number
     [4] = {1,1,0,1} --yellow
 }
 
-function logic.loadAll(gridWidth,gridHeight,aidifficulty,pttab) --Reset most of the game state with given values
+function logic.loadAll(gridWidth,gridHeight,pttab) --Reset most of the game state with given values
     logic.grid = {}
     logic.critgrid = {}
     for x = 1,gridWidth do
@@ -199,7 +203,9 @@ function logic.loadAll(gridWidth,gridHeight,aidifficulty,pttab) --Reset most of 
     logic.playeratoms = {}
     logic.playermoved = {}
     logic.players = 0
-    ai.init(logic,aidifficulty)
+    ai.playertab = {}
+    ai.difficulty = {}
+    ai.init(logic)
     for i = 1,4 do
         if pttab[i] > 0 then
             if logic.curplayer == -1 then logic.curplayer = i end
@@ -207,11 +213,13 @@ function logic.loadAll(gridWidth,gridHeight,aidifficulty,pttab) --Reset most of 
             logic.playertab[i] = true
             logic.playeratoms[i] = 0
             logic.playermoved[i] = false
-            if pttab[i] == 3 then logic.playertab[i] = "dummy" end
-            if pttab[i] == 2 then
-                logic.ai.playertab[i] = true
+            if pttab[i] == 9 then 
+                logic.playertab[i] = "dummy"
+            elseif pttab[i] > 1 then
+                ai.playertab[i] = true
+                ai.difficulty[i] = pttab[i] - 1
             else
-                logic.ai.playertab[i] = false
+                ai.playertab[i] = false
             end
         end
     end
@@ -286,7 +294,7 @@ function logic.tick(dt) --Game tick - disqualifies players, picks the winner, ex
                 else
                     table.remove(logic.atomstack)
                     if #logic.atomstack == 0 then
-                        nextplayer()
+                        nextPlayer()
                         break
                     end
                 end
@@ -300,14 +308,10 @@ end
 function logic.generateGrid(gridWidth,gridHeight) --Generate the grid background
     logic.bgimg = love.graphics.newCanvas(logic.winsize[1],logic.winsize[2])
     logic.bgimg:renderTo(function()
-        love.graphics.setColor(0.5,0.5,0.5,1)
-        love.graphics.rectangle("fill",10,90,gridWidth*cGRIDSIZE,gridHeight*cGRIDSIZE)
-        love.graphics.setColor(1,1,1,1)
-        for i = 0,gridWidth do
-            love.graphics.rectangle("fill",10+(i*cGRIDSIZE),90,1,gridHeight*cGRIDSIZE)
-        end
-        for i = 0,gridHeight do
-            love.graphics.rectangle("fill",10,90+(i*cGRIDSIZE),gridWidth*cGRIDSIZE,1)
+        for y = 0,gridHeight-1 do
+            for x = 0,gridWidth-1 do
+                love.graphics.draw(ctile,10+(x*cGRIDSIZE),90+(y*cGRIDSIZE))
+            end
         end
     end)
 end
@@ -327,11 +331,16 @@ function logic.drawVictoryWin(timestr) --Draw victory window and make background
     love.graphics.printf("Victory!",_CAFont24,msgx+8,msgy+8,240,"center")
 end
 
-local function cai(num,val) --For loadGame: convert player AI value to boolean
+local function cai(num,val,aidiff) --For loadGame: convert player AI value to boolean and AI difficulty
     if val == 0 then
         ai.playertab[num] = false
     else
         ai.playertab[num] = true
+        if val == 1 then --Default AI difficulty
+            ai.difficulty[num] = aidiff
+        elseif val <= 4 then
+            ai.difficulty[num] = val - 1
+        end
     end
 end
 
@@ -364,20 +373,22 @@ function logic.loadGame() --Loads the game, returns nil (on failure) or the new 
     logic.playeratoms = {}
     logic.playermoved = {}
     ai.playertab = {}
+    ai.difficulty = {}
     logic.startplayers = math.min(string.byte(str,6),4)
     logic.players = math.min(string.byte(str,7),4)
-    ai.difficulty = math.min(string.byte(str,8),3)
+    local aidifficulty = math.min(string.byte(str,8),3)
     logic.curplayer = string.byte(str,9)
     for i = 1,4 do
         cpst(i,string.byte(str,9+i))
-        cai(i,string.byte(str,13+i))
+        cai(i,string.byte(str,13+i),aidifficulty)
     end
     if logic.curplayer == 0 or logic.curplayer > 4 or logic.playertab[logic.curplayer] == nil then
-        nextplayer()
+        nextPlayer()
     end
     local ttime = (string.byte(str,20)*3600)+(string.byte(str,19)*60)+string.byte(str,18)
     local pos = 0
     logic.grid = {}
+    logic.critgrid = {}
     for x = 1,gridWidth do
         logic.grid[x] = {}
         logic.critgrid[x] = {}
@@ -390,10 +401,11 @@ function logic.loadGame() --Loads the game, returns nil (on failure) or the new 
             pos = pos + 2
         end
     end
+    ai.init(logic)
     return ttime
 end
 
-logic.nextPlayer = nextplayer
+logic.nextPlayer = nextPlayer
 
 logic.setAtoms = setAtomsUnsafe
 

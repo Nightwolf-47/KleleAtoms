@@ -33,23 +33,21 @@ local function checkSetValues() --Checks if values are in a valid range
     _CAGridW = math.max(math.min(_CAGridW, 30), 7)
     _CAGridH = math.max(math.min(_CAGridH, 20), 4)
     _CAAILevel = math.max(math.min(_CAAILevel, 3), 1)
-    _CAPlayer1 = math.max(math.min(_CAPlayer1, 2), 0)
-    _CAPlayer2 = math.max(math.min(_CAPlayer2, 2), 0)
-    _CAPlayer3 = math.max(math.min(_CAPlayer3, 2), 0)
-    _CAPlayer4 = math.max(math.min(_CAPlayer4, 2), 0)
+    _CAPlayer1 = math.max(math.min(_CAPlayer1, 4), 0)
+    _CAPlayer2 = math.max(math.min(_CAPlayer2, 4), 0)
+    _CAPlayer3 = math.max(math.min(_CAPlayer3, 4), 0)
+    _CAPlayer4 = math.max(math.min(_CAPlayer4, 4), 0)
     checkValidPlayers()
 end
 
 local function readArgs(args)
-    local valmode = 0 --0 - nothing, 1 - grid width, 2 - grid height, 3 - players, 4 - AI player count, 5 - AI difficulty
+    local valmode = 0 --0 - nothing, 1 - grid width, 2 - grid height, 3 - AI difficulty, 4-7 - Player types, 100 - OS type
     for k,v in ipairs(args) do
         if valmode == 0 then
             if v == "-gridwidth" or v == "-gw" then
                 valmode = 1
             elseif v == "-gridheight" or v == "-gh" then
                 valmode = 2
-            elseif v == "-ailevel" or v == "-al" then
-                valmode = 3
             elseif (string.sub(v,1,-2) == "-player" and v ~= "-players") or string.sub(v,1,-2) == "-p" then
                 local pnum = tonumber(string.sub(v,-1,-1))
                 if pnum and pnum >= 1 and pnum <= 4 then
@@ -57,20 +55,25 @@ local function readArgs(args)
                 end
             elseif v == "-mobilemode" or v == "-mobile" then
                 _CAIsMobile = true
+            elseif v == "-forceos" or v == "-os" then
+                valmode = 100
             elseif v == "-kbmode" then --Keyboard mode (adds virtual mouse controlled by keyboard)
                 _CAKBMode = true
             end
-        elseif valmode > 0 and valmode <= 5 then
+        elseif valmode > 0 and valmode <= 7 then
             local index = settsvals[valmode]
             _G[index] = tonumber(v) or _G[index]
             valmode = 0
+        elseif valmode == 100 then --Force OS type
+            _CAOSType = v
+            _CAIsMobile = _CAIsMobile or (_CAOSType == "Android" or _CAOSType == "iOS" or _CAOSType == "Web")
         end
     end
 end
 
 local function loadSettings()
     local inum = 1
-    if love.filesystem.getInfo("settings2.txt") then
+    if love.filesystem.getInfo("settings2.txt") then --Load a settings file (supports both 1.2 and 1.3 files)
         for line in love.filesystem.lines("settings2.txt") do
             if inum <= #settsvals then
                 local index = settsvals[inum]
@@ -78,7 +81,7 @@ local function loadSettings()
                 inum = inum + 1
             end
         end
-    elseif love.filesystem.getInfo("settings.txt") then --Convert settings format from 1.1.2 and older versions to 1.2 format
+    elseif love.filesystem.getInfo("settings.txt") then --Convert settings format from 1.1.2 and older versions to 1.2 format (with 1.3 changes)
         local pcount = nil
         for line in love.filesystem.lines("settings.txt") do
             if inum <= 2 then
@@ -101,7 +104,7 @@ local function loadSettings()
                     for i = pcount-aicount+1,pcount do
                         local index = settsvals[3+i]
                         if _G[index] == 0 then break end
-                        _G[index] = 2
+                        _G[index] = 3
                     end
                 end
             elseif inum == 5 then
@@ -121,11 +124,11 @@ function love.load(args)
     _CAFont32 = love.graphics.newFont(32) --Default font, size 32
     _CAGridW = 10 --Grid width
     _CAGridH = 6 --Grid Height
-    _CAPlayer1 = 1 --Player 1 type (0 - not present, 1 - player, 2 - AI, 3 - dummy/scripted)
-    _CAPlayer2 = 2 --Player 2 type
+    _CAPlayer1 = 1 --Player 1 type (0 - not present, 1 - player, 2 - AI easy, 3 - AI medium, 4 - AI hard, 9 - dummy/scripted)
+    _CAPlayer2 = 3 --Player 2 type
     _CAPlayer3 = 0 --Player 3 type
     _CAPlayer4 = 0 --Player 4 type
-    _CAAILevel = 2 --AI difficulty level (1 - easy, 2 - medium, 3 - hard)
+    _CAAILevel = 2 --Only used for settings/savefile compatibility
     _CAOSType = love.system.getOS()
     _CAIsMobile = (_CAOSType == "Android" or _CAOSType == "iOS" or _CAOSType == "Web") --If true, mobile mode will be enabled
     _CAKBMode = false --Keyboard mode
@@ -134,7 +137,6 @@ function love.load(args)
     checkSetValues() --Make sure the settings are within the acceptable range
     _CAState.list["game"] = require("states.game.gamestate")
     _CAState.list["menu"] = require("states.menu.menustate")
-    _CAState.list["pause"] = require("states.pause.pausestate")
     _CAState.change("menu")
 end
 

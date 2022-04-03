@@ -6,13 +6,23 @@ local cexplode = love.graphics.newImage("graphics/explode.png")
 
 local cplayer = love.graphics.newImage("graphics/player.png")
 
-local cplayerai = love.graphics.newImage("graphics/playerai.png")
+local cplayerai = love.graphics.newImage("graphics/playerai.png") --AI player sprite (without bars)
+
+local cplayerai2 = love.graphics.newImage("graphics/playerai2.png") --AI difficulty bars
+
+local ailevelquads = { --Quads for drawing only a part of cplayerai2 texture depending on AI difficulty
+    love.graphics.newQuad(0,0,10,50,cplayerai2:getDimensions()), --Easy (AI 1)
+    love.graphics.newQuad(0,0,14,50,cplayerai2:getDimensions()), --Medium (AI 2)
+    love.graphics.newQuad(0,0,18,50,cplayerai2:getDimensions()), --Hard (AI 3)
+}
 
 local cback = love.graphics.newImage("graphics/back.png")
 
 local gamelogic = require("states.game.gamelogic")
 
 local gametut = require("states.game.gametut")
+
+local gamepause = require("states.game.gamepause")
 
 local restarttime = 0.0 --In-game timer
 
@@ -22,6 +32,7 @@ local pausing = false --Will the game pause next turn?
 
 local tutorial = false --Is tutorial active?
 
+
 local function getGameTime()
     return string.format("%0.2d:%0.2d",math.floor(restarttime / 60),math.floor(restarttime % 60))
 end
@@ -29,47 +40,42 @@ end
 local function pauseGame()
     if tutorial then
         _CAState.change("menu")
-        return
+        return false
     end
     if #gamelogic.atomstack > 0 or gamelogic.animplaying then
         pausing = true
         _CAState.printmsg("Pausing...",0.1)
-        return
+        return false
     end
     pausing = false
-    love.graphics.captureScreenshot(function(imgdata)
-        local screenshot = love.graphics.newImage(imgdata)
-        _CAState.change("pause",{screenshot,gamelogic,restarttime})
-    end)
+    gamepause.init(gamelogic,restarttime)
+    return true
 end
 
 function gamestate.init(laststate,argtab)
     exiting = nil
-    screenshot = nil
     pausing = false
     tutorial = false
-    if laststate ~= "pause" or (argtab and argtab[1] == "restart") then
-        restarttime = 0.0
-        local ttime = nil
-        if argtab and argtab[1] == "tutorial" then
-            tutorial = true
-            gamelogic.loadAll(10,6,2,{1,3,3,3})
-            gametut.init(gamelogic)
-        else
-            gamelogic.loadAll(_CAGridW,_CAGridH,_CAAILevel,{_CAPlayer1,_CAPlayer2,_CAPlayer3,_CAPlayer4})
-            ttime = gamelogic.loadGame()
-        end
-        if ttime then restarttime = ttime; _CAState.printmsg("Saved game loaded.",2) end
-        return gamelogic.winsize[1],gamelogic.winsize[2]
+    restarttime = 0.0
+    local ttime = nil
+    if argtab and argtab[1] == "tutorial" then
+        tutorial = true
+        gamelogic.loadAll(10,6,{1,9,9,9})
+        gametut.init(gamelogic)
     else
-        gamelogic.generateGrid(#gamelogic.grid,#gamelogic.grid[1])
+        gamelogic.loadAll(_CAGridW,_CAGridH,{_CAPlayer1,_CAPlayer2,_CAPlayer3,_CAPlayer4})
+        ttime = gamelogic.loadGame()
     end
+    if ttime then restarttime = ttime; _CAState.printmsg("Saved game loaded.",2) end
+    return gamelogic.winsize[1],gamelogic.winsize[2]
 end
 
 function gamestate.update(dt)
     if not gamelogic.bgimg then gamelogic.generateGrid(#gamelogic.grid,#gamelogic.grid[1]) end
-    if gamelogic.playerwon == 0 then
-        if pausing then pauseGame() end
+    if gamelogic.paused then
+        gamepause.update(dt)
+    elseif gamelogic.playerwon == 0 then
+        if pausing and pauseGame() then return end
         restarttime = restarttime + dt
         if tutorial then
             if gametut.update(dt) then return end
@@ -104,7 +110,10 @@ function gamestate.draw() --Draw all stuff, move animated atoms and calculate at
                 love.graphics.setColor(gamelogic.coltab[i])
             end
             if gamelogic.ai.playertab[i] then
+                local ailevel = gamelogic.ai.difficulty[i]
                 love.graphics.draw(cplayerai,xpos,ypos)
+                love.graphics.setColor(1,1,1,1)
+                love.graphics.draw(cplayerai2,ailevelquads[ailevel],xpos,ypos)
             else
                 love.graphics.draw(cplayer,xpos,ypos)
             end
@@ -160,17 +169,19 @@ function gamestate.draw() --Draw all stuff, move animated atoms and calculate at
     love.graphics.printf(getGameTime(),_CAFont16,0,0,gamelogic.winsize[1]-2,"right")
     if tutorial then gametut.draw() end
     love.graphics.draw(cback,2,2)
+    if gamelogic.paused then gamepause.draw() end
 end
 
 function gamestate.keyreleased(key)
     if restarttime >= 0.3 then
         if key == "m" then
             _CAState.change("menu")
-        elseif key == "escape" and gamestate.playerwon == 0 then
+        elseif key == "escape" and gamestate.playerwon == 0 and not gamelogic.paused then
             pauseGame()
         end
     end
     if tutorial then gametut.keyreleased(key) end
+    if gamelogic.paused then gamepause.keyreleased(key) end
 end
 
 function gamestate.mousepressed(x, y, button)
@@ -180,7 +191,9 @@ function gamestate.mousepressed(x, y, button)
         exiting = button
     else
         if tutorial and gametut.mousepressed(x,y,button) then 
-            return 
+            return
+        elseif gamelogic.paused then 
+            gamepause.mousepressed(x,y,button)
         elseif x >= 10 and x < 10+gw*gamelogic.cGRIDSIZE and y >= 90 and y < 90+gh*gamelogic.cGRIDSIZE then
             local pressx = math.floor((x-10)/gamelogic.cGRIDSIZE)+1
             local pressy = math.floor((y-90)/gamelogic.cGRIDSIZE)+1
@@ -190,8 +203,13 @@ function gamestate.mousepressed(x, y, button)
 end
 
 function gamestate.mousereleased(x,y,button)
+    if gamelogic.paused then 
+        gamepause.mousereleased(x,y,button)
+        return
+    end
     if exiting == button then
         if gamelogic.playerwon == 0 then
+            exiting = nil
             pauseGame()
         else
             _CAState.change("menu")

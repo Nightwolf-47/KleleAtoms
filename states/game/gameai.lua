@@ -4,6 +4,8 @@ local aitime = 0.0 --Timer for AI (it can only move after cAIDELAY)
 
 local ai = {}
 
+local logic = nil
+
 local ccdchecktab = {} --Table of diagonally closest tiles to a corner, created every time AI code is initialized
 
 local function aiIsTileEnemy(x,y) --Check if a tile belongs to another player
@@ -144,8 +146,8 @@ end
 local function aiThinker() --Pick a tile and use the clickedTile() function
     local tx = 0
     local ty = 0
-    if ai.difficulty <= 3 then --Easy - just pick a random tile, Normal and Hard - more advanced strategies, not too advanced for optimization reasons
-        local sptiles, tiles = aiGetSpecialTiles(ai.difficulty)
+    if ai.difficulty[logic.curplayer] <= 3 then --Easy - just pick a random tile, Normal and Hard - more advanced strategies, not too advanced for optimization reasons
+        local sptiles, tiles = aiGetSpecialTiles(ai.difficulty[logic.curplayer])
         if #sptiles > 0 then
             local rindex = love.math.random(1,#sptiles)
             tx = sptiles[rindex][1]
@@ -156,19 +158,17 @@ local function aiThinker() --Pick a tile and use the clickedTile() function
             ty = tiles[rindex][2]
         end
     else
-        error("Incorrect AI difficulty - "..tostring(ai.difficulty))
+        error("Incorrect AI difficulty - "..tostring(ai.difficulty[logic.curplayer]))
     end
     logic.clickedTile(tx,ty,true) --Simulate clicking the chosen tile
 end
 
 ai.playertab = {false,false}
 
-ai.difficulty = 2
+ai.difficulty = {2,2,2,2}
 
-function ai.init(logictab,ailevel) --Initialize AI
+function ai.init(logictab) --Initialize AI
     logic = logictab
-    ai.playertab = {}
-    ai.difficulty = ailevel
     local gridw = #logic.grid
     local gridh = #logic.grid[1]
     ccdchecktab = {

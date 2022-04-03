@@ -69,7 +69,7 @@ function state.mousepressed(x, y, button)
         x,y = mobile.convertcoords(x,y)
     end
     if curstatedata and curstatedata.mousepressed then
-        state.list[curstate].mousepressed(x,y,button)
+        curstatedata.mousepressed(x,y,button)
     end
 end
  
@@ -78,7 +78,7 @@ function state.mousereleased(x, y, button)
         x,y = mobile.convertcoords(x,y)
     end
     if curstatedata and curstatedata.mousereleased then
-        state.list[curstate].mousereleased(x,y,button)
+        curstatedata.mousereleased(x,y,button)
     end
 end
 
