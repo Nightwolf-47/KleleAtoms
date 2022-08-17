@@ -89,6 +89,7 @@ local function aiGetSpecialTiles(difficulty) --Make a list of available tiles, a
                     end
                 elseif difficulty == 3 then --Hard (at least it's supposed to be)
                     local isCorner = (x == 1 or x == gridx) and (y == 1 or y == gridy)
+                    local atomcount = #logic.grid[x][y].atoms
                     if isCorner and atomcount == 1 and not aiAtomsNearby(x,y) then --Avoid exploding corners when no atoms are nearby
                         table.remove(natiles)
                         tileAvoided = true
@@ -101,7 +102,6 @@ local function aiGetSpecialTiles(difficulty) --Make a list of available tiles, a
                             tileAvoided = true
                         end
                     end
-                    local atomcount = #logic.grid[x][y].atoms
                     local isAdvantage = false
                     if not isSpTile then isAdvantage = aiCheckAdvantage(x,y,atomcount-logic.critgrid[x][y]) end --Check for any atom advantage in the tile
                     if not tileAvoided and (cornercount == 0 or aiCornerCheck(x,y)) and isCorner then --If corner tile is not avoided and the player either has no corners or the corner spot is undefended, focus on it
