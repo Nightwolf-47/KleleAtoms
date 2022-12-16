@@ -259,7 +259,7 @@ function menustate.init() --Initialize/modify some values, check for saved game 
     if _CAOSType == "Web" then --On Newgrounds, my nick is KleleMaster
         madebystr = "Made by KleleMaster"
     end
-    if winw ~= 640 or winh ~= 480 or _CAOSType == "Web" then return 640,480 end
+    if winw ~= 640 or winh ~= 480 or _CAOSType == "Web" or _CAUseScaling then return 640,480 end
 end
 
 function menustate.update(dt)
@@ -340,9 +340,23 @@ function menustate.draw()
     love.graphics.draw(kalogo,(640-klwidth)/2,0)
     love.graphics.printf(madebystr,_CAFont16,5,460,630,"right")
     love.graphics.print(versionstr,_CAFont16,5,460)
+    if _CAPlayExp == 1 and math.floor(menutimer) % 2 == 0 then --Show tutorial message to new players
+        love.graphics.setColor(1,0.65,0,1)
+        local tutbut = buttons[#buttons]
+        love.graphics.printf("TUTORIAL!",_CAFont24,tutbut[3],tutbut[4]-40,150,"center")
+    end
     love.graphics.setColor(0,0,0,1)
     love.graphics.rectangle("fill",-50,0,50,480)
     love.graphics.rectangle("fill",640,0,50,480)
+    if _CAUseScaling then --Draw extended background
+        love.graphics.setColor(1,1,1,0.75)
+        love.graphics.draw(mbg,-640)
+        love.graphics.draw(mbg,640)
+        love.graphics.setColor(0,0,0.40,1)
+        love.graphics.rectangle("fill",0,-480,640,480)
+        love.graphics.setColor(0,0,0.07,1)
+        love.graphics.rectangle("fill",0,480,640,480)
+    end
     love.graphics.setColor(1,1,1,1)
 end
 

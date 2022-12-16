@@ -34,6 +34,8 @@ local buttonclicked = nil --The pause menu button that is being clicked or nil i
 
 local gametime = 0.0 --A copy of in-game time (for game saving)
 
+local drawcooldown = 0.0 --A cooldown for pause menu drawing (to prevent resize issues)
+
 local sndclick = love.audio.newSource("sounds/click.wav","static")
 
 local function pst(num) --Convert player status from 2 variables to a number 0-2 (or 255 if player does not exist)
@@ -61,7 +63,7 @@ end
 local function saveGame() --Save the game to savegame.ksf file
     local gw = #gamelogic.grid
     local gh = #gamelogic.grid[1]
-    local str = "KSF"..string.char(gw % 256)..string.char(gh % 256)..string.char(math.min(gamelogic.startplayers,4))..string.char(gamelogic.players % 256)..string.char(_CAAILevel % 256)..string.char(gamelogic.curplayer % 256)..string.char(pst(1))..string.char(pst(2))..string.char(pst(3))..string.char(pst(4))..string.char(pai(1))..string.char(pai(2))..string.char(pai(3))..string.char(pai(4))..string.char(gametime % 60)..string.char((gametime/60) % 60)..string.char((gametime/3600) % 256)
+    local str = "KSF"..string.char(gw % 256)..string.char(gh % 256)..string.char(math.min(gamelogic.startplayers,4))..string.char(gamelogic.players % 256)..string.char(_CAPlayExp % 256)..string.char(gamelogic.curplayer % 256)..string.char(pst(1))..string.char(pst(2))..string.char(pst(3))..string.char(pst(4))..string.char(pai(1))..string.char(pai(2))..string.char(pai(3))..string.char(pai(4))..string.char(gametime % 60)..string.char((gametime/60) % 60)..string.char((gametime/3600) % 256)
     for x = 1,gw do
         for y = 1,gh do
             str = str..string.char(gamelogic.grid[x][y].player % 256)..string.char(#gamelogic.grid[x][y].atoms % 256)
@@ -78,16 +80,27 @@ local function setupPauseMenu() --Calculate window, text and button positions, r
     local yoffs = 0
     local xoffs = 0
     if not _CAIsMobile then
-        if winx > 480 then
-            xoffs = math.floor((winx-480)/2)
-            winx = 480
-        end
-        if winy > 360 then
-            yoffs = math.floor((winy-360)/2)
-            winy = 360
+        if _CAFullScreen then
+            xoffs = math.floor(winx/4)
+            yoffs = math.floor(winy/4)
+            winx = math.floor(winx/2)
+            winy = math.floor(winy/2)
+        elseif not _CAWinResizing then
+            if winx > 480 then
+                xoffs = math.floor((winx-480)/2)
+                winx = 480
+            end
+            if winy > 360 then
+                yoffs = math.floor((winy-360)/2)
+                winy = 360
+            end
         end
     end
-    if winy > winx then
+    local maxwinx = math.floor(4*winy/3)
+    if winx > maxwinx then --Pause menu can't be wider than 4:3
+        xoffs = xoffs + math.floor((winx-maxwinx)/2)
+        winx = maxwinx
+    elseif winy > winx then
         yoffs = yoffs + xoffs + math.floor((winy-winx)/2)
         winy = winx
     end
@@ -158,7 +171,7 @@ end
 function gamepause.init(logic,gtime)
     gamelogic = logic
     gametime = gtime
-    winx, winy = _CAState.getWindowSize()
+    winx, winy = love.graphics.getDimensions()
     setupPauseMenu()
     gamelogic.paused = true
     pausetime = 0.0
@@ -167,18 +180,25 @@ end
 
 function gamepause.update(dt)
     pausetime = pausetime + dt
+    if drawcooldown > 0 then
+        drawcooldown = math.max(drawcooldown-dt,0)
+    elseif not cbut then 
+        setupPauseMenu() 
+    end
 end
 
 function gamepause.draw()
+    _CAState.absoluteDrawMode(true)
     love.graphics.setColor(0,0,0,0.5)
-    love.graphics.rectangle("fill",0,0,_CAState.getWindowSize())
+    love.graphics.rectangle("fill",0,0,love.graphics.getDimensions())
     love.graphics.setColor(1,1,1,1)
+    if not cbut then return end --If pause menu is not setup, do not render it
     love.graphics.rectangle("line",winpos[1],winpos[2],winpos[3]-winpos[1],winpos[4]-winpos[2])
     love.graphics.setColor(0.2,0.2,0.2,1)
     love.graphics.rectangle("fill",winpos[1],winpos[2],winpos[3]-winpos[1],winpos[4]-winpos[2])
     love.graphics.setColor(1,1,1,1)
     love.graphics.printf("PAUSE",pfont,winpos[1],winpos[6],winpos[5],"center")
-    local mx, my = _CAState.getMousePos()
+    local mx, my = love.mouse.getPosition()
     for i = 1,4 do
         if buttonSelected(mx,my,i) then love.graphics.draw(cbutpress,butpos[i][1],butpos[i][2]) else love.graphics.draw(cbut,butpos[i][1],butpos[i][2]) end
     end
@@ -199,6 +219,7 @@ function gamepause.keyreleased(key)
 end
 
 function gamepause.mousepressed(x,y,button)
+    x,y = love.mouse.getPosition()
     for i = 1,4 do
         if x >= butpos[i][1] and x <= butpos[i][3] and y >= butpos[i][2] and y <= butpos[i][4] then
             love.audio.play(sndclick)
@@ -209,6 +230,7 @@ function gamepause.mousepressed(x,y,button)
 end
 
 function gamepause.mousereleased(x,y,button)
+    x,y = love.mouse.getPosition()
     if buttonclicked == 1 then
         gamelogic.paused = false
         _CAState.change("menu")
@@ -227,6 +249,12 @@ function gamepause.mousereleased(x,y,button)
         end
     end
     buttonclicked = nil
+end
+
+function gamepause.fullscreen(isFullscreen)
+    winx, winy = love.graphics.getDimensions()
+    drawcooldown = 0.25
+    cbut = nil
 end
 
 return gamepause

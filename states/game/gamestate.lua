@@ -58,9 +58,10 @@ function gamestate.init(laststate,argtab)
     tutorial = false
     restarttime = 0.0
     local ttime = nil
+    _CAPlayExp = math.max(_CAPlayExp,2)
     if argtab and argtab[1] == "tutorial" then
         tutorial = true
-        gamelogic.loadAll(10,6,{1,9,9,9})
+        gamelogic.loadAll(10,6,{9,9,9,9})
         gametut.init(gamelogic)
     else
         gamelogic.loadAll(_CAGridW,_CAGridH,{_CAPlayer1,_CAPlayer2,_CAPlayer3,_CAPlayer4})
@@ -155,7 +156,7 @@ function gamestate.draw() --Draw all stuff, move animated atoms and calculate at
                     local xpos = 10+((x-1)*gamelogic.cGRIDSIZE)+v[1]
                     local ypos = 90+((y-1)*gamelogic.cGRIDSIZE)+v[2]
                     love.graphics.setColor(gamelogic.coltab[plcolor])
-                    love.graphics.draw(catom,xpos,ypos)
+                    love.graphics.draw(catom,xpos,ypos,0,0.5)
                 end
                 if plcolor > 0 and plcolor <= 4 and gamelogic.playertab[plcolor] ~= nil then gamelogic.playeratoms[plcolor] = gamelogic.playeratoms[plcolor] + #gamelogic.grid[x][y].atoms end --Calculate player atoms
             end
@@ -176,7 +177,7 @@ function gamestate.keyreleased(key)
     if restarttime >= 0.3 then
         if key == "m" then
             _CAState.change("menu")
-        elseif key == "escape" and gamestate.playerwon == 0 and not gamelogic.paused then
+        elseif key == "escape" and gamelogic.playerwon == 0 and not gamelogic.paused then
             pauseGame()
         end
     end
@@ -187,7 +188,7 @@ end
 function gamestate.mousepressed(x, y, button)
     local gw = #gamelogic.grid
     local gh = #gamelogic.grid[1]
-    if gamelogic.playerwon ~= 0 or (x >= 0 and x <= 44 and y <= 44) then
+    if gamelogic.playerwon ~= 0 or (x >= 0 and x <= 44 and y >= 0 and y <= 44) then
         exiting = button
     else
         if tutorial and gametut.mousepressed(x,y,button) then 
@@ -215,6 +216,17 @@ function gamestate.mousereleased(x,y,button)
             _CAState.change("menu")
         end
     end
+end
+
+function gamestate.fullscreen(isFullscreen)
+    gamelogic.bgimg = nil
+    if gamelogic.paused then
+        gamepause.fullscreen(isFullscreen)
+    end
+end
+
+function gamestate.resize(x,y)
+    gamestate.fullscreen(_CAFullScreen)
 end
 
 return gamestate

@@ -235,6 +235,7 @@ function logic.loadAll(gridWidth,gridHeight,pttab) --Reset most of the game stat
     logic.playerwon = 0
     logic.expcount = 0
     logic.bgimg = nil
+    logic.paused = false
 end
 
 function logic.clickedTile(tx,ty,dontcheckai) --Callback called when a tile is clicked by player or AI
@@ -328,6 +329,7 @@ function logic.drawVictoryWin(timestr) --Draw victory window and make background
     local str = colornames[logic.playerwon].." has won!\nTime: "..timestr.."\nClick to continue..."
     love.graphics.printf(str,_CAFont16,msgx+8,msgy+50,240,"center")
     love.graphics.setColor(1,1,1,1)
+    _CAPlayExp = 3
     love.graphics.printf("Victory!",_CAFont24,msgx+8,msgy+8,240,"center")
 end
 
@@ -376,7 +378,7 @@ function logic.loadGame() --Loads the game, returns nil (on failure) or the new 
     ai.difficulty = {}
     logic.startplayers = math.min(string.byte(str,6),4)
     logic.players = math.min(string.byte(str,7),4)
-    local aidifficulty = math.min(string.byte(str,8),3)
+    local aidifficulty = math.min(string.byte(str,8),3) --Only used in 1.1 - 1.2.1 save files
     logic.curplayer = string.byte(str,9)
     for i = 1,4 do
         cpst(i,string.byte(str,9+i))

@@ -25,6 +25,12 @@ If a player loses all their atoms, they lose. The last standing player wins the 
   
 \*corner - 2 atoms, side - 3 atoms, otherwise 4 atoms (or more)
 
+## Special in-game keys (PC only)
+**The keys only work in 1.4 and newer versions.**  
+  
+`F3` - toggle window resizing  
+`F4` - toggle fullscreen mode
+
 ## Command line parameters
 `-gw <number>` - change grid width (7-30)  
 `-gh <number>` - change grid height (4-20)  
@@ -32,7 +38,8 @@ If a player loses all their atoms, they lose. The last standing player wins the 
 `-p2 <type>` - change player 2 type  
 `-p3 <type>` - change player 3 type  
 `-p4 <type>` - change player 4 type  
-`-kbmode` - enable keyboard-only mode (with keyboard-controlled cursor)  
+`-full <0/1>` - enable or disable fullscreen mode  
+`-resize <0/1>` - enable or disable window resizing  
 `-mobile` - simulate mobile/web mode (fullscreen, limited grid size etc.)  
 `-os <name>` - spoof the target OS (`-os Web` simulates HTML5 love.js version)
 
