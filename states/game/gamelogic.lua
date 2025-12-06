@@ -136,6 +136,41 @@ local function setAtomsUnsafe(x,y,atomcount,player) --Place atoms without checki
     end
 end
 
+local function doTileActions(dt) --Move animated atoms, calculate atom count for each player, handle exploding tiles
+    logic.animplaying = false
+    for i = 1,4 do
+        logic.playeratoms[i] = 0
+    end
+    local mspeed = logic.cATOMSPEED*dt*math.max(math.min(logic.expcount,2000)/10,1) --move speed (in pixels)
+    for x = 1,#logic.grid do
+        for y = 1,#logic.grid[1] do
+            local curtile = logic.grid[x][y]
+            local plnum = curtile.player --Player number (0-4, 0 - no player on tile)
+            if curtile.explode > 0 then
+                curtile.explode = curtile.explode - dt
+                if curtile.explode <= 0 then
+                    curtile.explode = 0
+                else
+                    logic.animplaying = true
+                end
+            elseif plnum >= 0 then
+                if plnum > 0 and plnum <= 4 and logic.playertab[plnum] ~= nil then
+                    logic.playeratoms[plnum] = logic.playeratoms[plnum] + #curtile.atoms
+                end
+                for _,curatom in ipairs(curtile.atoms) do
+                    if (curatom[1] ~= curatom[3]) or (curatom[2] ~= curatom[4]) then --If atoms aren't at their destination, move them
+                        logic.animplaying = true
+                        local xmove = math.max(-mspeed,math.min(curatom[3]-curatom[1],mspeed))
+                        local ymove = math.max(-mspeed,math.min(curatom[4]-curatom[2],mspeed))
+                        curatom[1] = curatom[1] + xmove
+                        curatom[2] = curatom[2] + ymove
+                    end
+                end
+            end
+        end
+    end
+end
+
 logic.ai = ai
 
 logic.grid = {} --Atom grid (contains data in format [x][y])
@@ -255,8 +290,9 @@ function logic.tick(dt) --Game tick - disqualifies players, picks the winner, ex
     sndput:setPitch(0.75)
     if logic.expcount > 20000 then 
         _CAState.printmsg("More than 20000 simultaneous explosions! Stopping...",4)
-        _CAState.change("menu") 
+        _CAState.change("menu")
     end
+    doTileActions(dt)
     for i = 1,4 do
         local v = logic.playeratoms[i]
         if v ~= nil then

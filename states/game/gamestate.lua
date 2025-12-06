@@ -85,23 +85,18 @@ function gamestate.update(dt)
     end
 end
 
-function gamestate.draw() --Draw all stuff, move animated atoms and calculate atom count for each player
-    local dt = love.timer.getDelta()
-    local mspeed = gamelogic.cATOMSPEED*dt*math.max(math.min(gamelogic.expcount,2000)/10,1) --move speed (in pixels)
-    gamelogic.animplaying = false
+function gamestate.draw() --Draw everything in-game
     love.graphics.setColor(1,1,1,1)
     if gamelogic.bgimg then love.graphics.draw(gamelogic.bgimg) end
+    local plpos = 0 --Player position in the player list
+    --Draw player list, i = player index
     for i = 1,4 do
-        gamelogic.playeratoms[i] = 0
-    end
-    local k = 0
-    for i = 1,4 do
-        local v = gamelogic.playertab[i]
-        if v ~= nil then
-            k = k + 1
+        local playertab = gamelogic.playertab[i]
+        if playertab ~= nil then
+            plpos = plpos + 1
             local ypos = 20
-            local xpos = math.floor(k*gamelogic.winsize[1]/(gamelogic.startplayers+1)-12)
-            if not v then
+            local xpos = math.floor(plpos*gamelogic.winsize[1]/(gamelogic.startplayers+1)-12)
+            if not playertab then
                 love.graphics.setColor(0.5,0.5,0.5,1)
             elseif gamelogic.curplayer == i then
                 love.graphics.setColor(1,1,1,1)
@@ -120,49 +115,26 @@ function gamestate.draw() --Draw all stuff, move animated atoms and calculate at
             end
         end
     end
+    --Draw atoms and explosions
     for x = 1,#gamelogic.grid do
         for y = 1,#gamelogic.grid[1] do
             local atomg = gamelogic.grid[x][y].atoms
             local plcolor = gamelogic.grid[x][y].player
             if gamelogic.grid[x][y].explode > 0 then --Atom is exploding
-                gamelogic.animplaying = true
-                gamelogic.grid[x][y].explode = math.max(gamelogic.grid[x][y].explode-dt,0)
                 love.graphics.setColor(1,1,1,1)
                 local qgridsize = 19*gamelogic.cGRIDSIZE/64
                 love.graphics.draw(cexplode,10+((x-1)*gamelogic.cGRIDSIZE)+qgridsize,90+((y-1)*gamelogic.cGRIDSIZE)+qgridsize)
-            elseif plcolor >= 0 and atomg then --Atoms are present, animate atoms if needed
+            elseif plcolor >= 0 and atomg then --Atoms are present, draw them
                 for k,v in ipairs(atomg) do
-                    local xdist = math.abs(v[1]-v[3])
-                    local ydist = math.abs(v[2]-v[4])
-                    if xdist > 0 or ydist > 0 then
-                        gamelogic.animplaying = true
-                        local xdir = v[3]-v[1]
-                        local ydir = v[4]-v[2]
-                        if xdir > 0 then
-                            xdir = 1
-                        elseif xdir < 0 then
-                            xdir = -1
-                        end
-                        if ydir > 0 then
-                            ydir = 1
-                        elseif ydir < 0 then
-                            ydir = -1
-                        end
-                        local xstep = math.min(xdist,mspeed)*xdir
-                        local ystep = math.min(ydist,mspeed)*ydir
-                        v[1] = v[1] + xstep
-                        v[2] = v[2] + ystep
-                    end
                     local xpos = 10+((x-1)*gamelogic.cGRIDSIZE)+v[1]
                     local ypos = 90+((y-1)*gamelogic.cGRIDSIZE)+v[2]
                     love.graphics.setColor(gamelogic.coltab[plcolor])
                     love.graphics.draw(catom,xpos,ypos,0,0.5)
                 end
-                if plcolor > 0 and plcolor <= 4 and gamelogic.playertab[plcolor] ~= nil then gamelogic.playeratoms[plcolor] = gamelogic.playeratoms[plcolor] + #gamelogic.grid[x][y].atoms end --Calculate player atoms
             end
         end
     end
-    if gamelogic.playerwon ~= 0 then 
+    if gamelogic.playerwon ~= 0 then
         gamelogic.drawVictoryWin(getGameTime())
         return
     end
