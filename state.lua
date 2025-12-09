@@ -10,8 +10,6 @@ local state = {}
 
 local mobile = require("mobile") --Mobile/scaling mode
 
-local kbmode = require("kbmode") --Keyboard mode
-
 local specialKeys = {
     ["f3"] = function()
         mobile.toggleWinResizing()
@@ -42,7 +40,6 @@ function state.update(dt)
     if globalmsg[2] > 0 then
         globalmsg[2] = globalmsg[2] - dt
     end
-    if _CAKBMode then kbmode.update(dt) end
     if curstatedata and curstatedata.update then
         curstatedata.update(dt)
     end
@@ -54,9 +51,6 @@ function state.draw()
     end
     if curstatedata and curstatedata.draw then
         curstatedata.draw()
-    end
-    if _CAKBMode then
-        kbmode.draw()
     end
     if _CAUseScaling then
         mobile.postdraw()
@@ -71,17 +65,13 @@ function state.draw()
 end
 
 function state.keypressed(key,scancode,isrepeat)
-    if _CAKBMode and kbmode.keypressed(key) then
-        --Nothing
-    elseif curstatedata and curstatedata.keypressed then
+    if curstatedata and curstatedata.keypressed then
         curstatedata.keypressed(key,scancode,isrepeat)
     end
 end
 
 function state.keyreleased(key)
-    if _CAKBMode and kbmode.keyreleased(key) then
-        --Nothing
-    elseif not _CAIsMobile and specialKeys[key] then
+    if not _CAIsMobile and specialKeys[key] then
         specialKeys[key]()
     elseif curstatedata and curstatedata.keyreleased then
         curstatedata.keyreleased(key)
@@ -152,7 +142,6 @@ function state.change(name,argtab) --Change state
                     mobile.setresolution(newx,newy)
                     msgfont = nil
                 else
-                    if _CAKBMode then kbmode.setPos(newx/2,newy/2) end
                     love.window.updateMode(newx,newy)
                 end
             end
@@ -168,7 +157,6 @@ function state.printmsg(str,time) --Print a message on the top-left corner for a
 end
 
 function state.getMousePos() --Get current mouse position (use this instead of love.mouse.getPosition()/getX()/getY())
-    if _CAKBMode then return kbmode.getPos() end
     local mx,my = love.mouse.getPosition()
     if _CAUseScaling then
         mx,my = mobile.convertcoords(mx,my)
